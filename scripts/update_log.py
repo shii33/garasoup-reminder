@@ -15,7 +15,7 @@ try:
 except ImportError:
     sys.exit('cryptography が必要です: pip install cryptography')
 
-HEADER = re.compile(r'^[\u200e\u200f]*\[(\d{4}/\d{2}/\d{2}) (\d{2}:\d{2}:\d{2})\] ([^:]+): ?(.*)$')
+HEADER = re.compile(r'^[\u200e\u200f]*\[(\d{4}/\d{2}/\d{2}) (\d{1,2}:\d{2}:\d{2})\] ([^:]+): ?(.*)$')
 SYSTEM_MARKERS = ('画像は含まれていません','スタンプは含まれていません','ビデオは含まれていません','このメッセージは削除されました')
 WHO = {'ぱっち':'み','motchi':'も'}
 FUN_PATTERNS = {
@@ -66,6 +66,7 @@ def load_core(data_dir,password):
 
 def save_core(data_dir,core,password,part_count):
     packed=json.dumps(encrypt_obj(core,password),ensure_ascii=False,separators=(',',':'))
+    # Site loader currently concatenates a fixed number of parts. Keep the same count.
     size=(len(packed)+part_count-1)//part_count
     chunks=[packed[i*size:(i+1)*size] for i in range(part_count)]
     for i,ch in enumerate(chunks,1): (data_dir/f'corex-{i:02d}.part').write_text(ch,encoding='utf-8')
@@ -130,6 +131,7 @@ def update_stats(stats,new,state):
         mins=call_minutes(r['text'])
         if mins>stats['longest_call'].get('minutes',0):
             stats['longest_call']={'date':r['dt'].date().isoformat(),'time':r['dt'].time().isoformat(),'sender':r['sender'],'minutes':float(mins)}
+    # Update longest <=60-second text-message rally from the new segment.
     best=[]; cur=[]
     for r in texts:
         if cur and (r['dt']-cur[-1]['dt']).total_seconds()>60: cur=[]
@@ -151,6 +153,7 @@ def update_stats(stats,new,state):
         end=max(r['dt'].date().isoformat() for r in new); stats['period']['end']=max(stats['period']['end'],end)
         stats['period']['days']=(datetime.fromisoformat(stats['period']['end'])-datetime.fromisoformat(stats['period']['start'])).days+1
         known=set(state.setdefault('active_dates',[])); known.update(r['dt'].date().isoformat() for r in new); state['active_dates']=sorted(known)
+        # Existing period was continuous; any newly seen date after the old end is an active day.
         base_active=state.get('base_active_days',stats['period'].get('active_days',stats['period']['days']))
         old_end=state.get('base_end',stats['period']['end'])
         extra=len({d for d in known if d>old_end}); stats['period']['active_days']=base_active+extra
@@ -212,15 +215,20 @@ def main():
     core['quiz']=update_quiz(core['quiz'],new)
     part_sizes=save_core(data,core,password,part_count)
 
-    mempack=load_json(data/'memories.enc'); payload=decrypt_obj(mempack,password); memories=payload['memories'] if isinstance(payload,dict) else payload
-    next_id=max((x.get('id',0) for x in memories),default=0)+1
+    extra_path=data/'memories-extra.enc'
+    if extra_path.exists():
+        payload=decrypt_obj(load_json(extra_path),password)
+        extra=payload.get('memories',[]) if isinstance(payload,dict) else payload
+    else:
+        extra=[]
+    next_id=1203+len(extra)
     for day,groups in sorted(scenes_by_day(new,10).items()):
         for lines in groups:
-            memories.append({'id':next_id,'date':day,'lines':lines}); next_id+=1
-    save_json(data/'memories.enc',encrypt_obj({'version':1,'count':len(memories),'memories':memories},password))
+            extra.append({'id':next_id,'date':day,'lines':lines}); next_id+=1
+    save_json(extra_path,encrypt_obj({'memories':extra},password))
 
     state['last_processed']=max(r['dt'] for r in new).isoformat(); state_path.write_text(json.dumps(state,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print(f'更新完了: {state["last_processed"]}')
-    print(f'core: {part_count} parts / memories: {len(memories)}件 / part sizes: {part_sizes}')
+    print(f'core: {part_count} parts / memories: {1202+len(extra)}件 / part sizes: {part_sizes}')
 
 if __name__=='__main__': main()
