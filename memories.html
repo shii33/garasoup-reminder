@@ -95,7 +95,6 @@
 
   function renderMemory(memory){
     dateEl.textContent=String(memory.date||"").replaceAll("-",".");
-    countEl.textContent=`${memories.length}個のどこかから`;
     scene.replaceChildren();
     (memory.lines||[]).forEach(item=>{
       const row=document.createElement("div"), mine=item.who==="み";
