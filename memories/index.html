@@ -1,0 +1,24 @@
+<!DOCTYPE html><html lang="ja" class="notranslate" translate="no"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="google" content="notranslate"><meta name="robots" content="noindex,nofollow,noarchive"><title>たまには思い出そうず｜我らのあそび場</title><link rel="stylesheet" href="../assets/site.css"></head><body><header class="site-header"><div class="site-header__inner"><a class="brand" href="../">我らのあそび場</a><button class="lock-btn" data-lock>鍵をかける</button></div></header><main class="shell app-shell conversation-shell"><div class="backline"><a href="../">← あそび場にもどる</a></div><section class="app-title"><div class="icon">💬</div><div><h1>たまには思い出そうず</h1><p>過去ログから、昔のわれわれを1場面。</p></div></section><div style="height:24px"></div><section class="panel"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px"><span class="chip" id="date">---</span></div><div class="chat-scene" id="scene" style="min-height:220px"></div><div class="actions" style="margin-top:22px"><button class="press-btn primary" id="next">もういっこ</button></div></section></main><script src="../assets/auth.js"></script><script src="../assets/common.js"></script><script src="../assets/data.js"></script><script>
+(async()=>{
+  wireLock('../');
+  const memories=await WareraData.memories('../');
+  const scene=document.getElementById('scene'),date=document.getElementById('date'),next=document.getElementById('next');
+  const RK='warera_memory_recent';
+  async function pick(){
+    next.disabled=true;
+    try{
+      let recent=[];try{recent=JSON.parse(localStorage.getItem(RK)||'[]')}catch(e){}
+      const recentSet=new Set(recent);
+      let pool=memories.filter(x=>!recentSet.has(String(x.id)));
+      if(!pool.length){recent=[];pool=memories}
+      const chosen=pool[Math.floor(Math.random()*pool.length)];
+      if(!chosen)return;
+      recent.push(String(chosen.id));localStorage.setItem(RK,JSON.stringify(recent.slice(-30)));
+      date.textContent=(chosen.date||'').replaceAll('-','.');
+      scene.replaceChildren();
+      (chosen.lines||[]).forEach(x=>{const row=document.createElement('div');row.className='chat-line '+(x.who==='み'?'mine':'theirs');const w=document.createElement('span');w.className='who';w.textContent=x.who;const bub=document.createElement('div');bub.className='bubble';bub.textContent=x.text;x.who==='み'?row.append(bub,w):row.append(w,bub);scene.append(row)});
+    }finally{next.disabled=false}
+  }
+  next.onclick=pick;pick();
+})();
+</script></body></html>

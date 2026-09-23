@@ -60,17 +60,10 @@ def load_json(path): return json.loads(Path(path).read_text(encoding='utf-8'))
 def save_json(path,obj): Path(path).write_text(json.dumps(obj,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
 
 def load_core(data_dir,password):
-    parts=sorted(data_dir.glob('corex-*.part'))
-    if not parts: raise FileNotFoundError('assets/data/corex-*.part が見つかりません')
-    return decrypt_obj(json.loads(''.join(p.read_text(encoding='utf-8') for p in parts)),password), len(parts)
+    return decrypt_obj(load_json(data_dir/'core.enc'),password)
 
-def save_core(data_dir,core,password,part_count):
-    packed=json.dumps(encrypt_obj(core,password),ensure_ascii=False,separators=(',',':'))
-    # Site loader currently concatenates a fixed number of parts. Keep the same count.
-    size=(len(packed)+part_count-1)//part_count
-    chunks=[packed[i*size:(i+1)*size] for i in range(part_count)]
-    for i,ch in enumerate(chunks,1): (data_dir/f'corex-{i:02d}.part').write_text(ch,encoding='utf-8')
-    return [len(x) for x in chunks]
+def save_core(data_dir,core,password):
+    save_json(data_dir/'core.enc',encrypt_obj(core,password))
 
 def is_call(r):
     t=r['text']; return ('音声通話,' in t or 'ビデオ通話,' in t or '通話の不在着信' in t)
@@ -198,37 +191,65 @@ def main():
     ap.add_argument('--root',default=str(Path(__file__).resolve().parents[1]))
     ap.add_argument('--password',default=os.getenv('WARERA_PASSPHRASE'))
     ap.add_argument('--dry-run',action='store_true')
-    args=ap.parse_args(); root=Path(args.root); data=root/'assets'/'data'; state_path=root/'scripts'/'state.json'
+    args=ap.parse_args()
+    root=Path(args.root)
+    data=root/'data'
+    state_path=root/'scripts'/'state.json'
     password=args.password or getpass.getpass('合言葉: ')
     raw=Path(args.input).read_text(encoding='utf-8-sig') if args.input else sys.stdin.read()
     records=parse_records(raw)
-    if not records: sys.exit('ログ形式を読み取れませんでした')
-    state=json.loads(state_path.read_text(encoding='utf-8')); cutoff=datetime.fromisoformat(state['last_processed'])
-    new=[r for r in records if r['dt']>cutoff]
-    if not new: print('新しいログはありません。変更なし。'); return
+    if not records:
+        sys.exit('ログ形式を読み取れませんでした')
+    state=json.loads(state_path.read_text(encoding='utf-8'))
+    cutoff=datetime.fromisoformat(state['last_processed'])
+    processed=set(state.get('processed_record_ids',[]))
+    def rid(r):
+        src=f"{r['dt'].isoformat()}\0{r['sender']}\0{r['text']}"
+        return hashlib.sha256(src.encode()).hexdigest()[:24]
+    new=[r for r in records if r['dt']>cutoff and rid(r) not in processed]
+    if not new:
+        print('新しいログはありません。変更なし。')
+        return
     print(f'新規 {len(new)} レコード: {new[0]["dt"]} → {new[-1]["dt"]}')
-    if args.dry_run: return
+    if args.dry_run:
+        return
 
-    core,part_count=load_core(data,password)
-    stats=update_stats(core['stats'],new,state); core['stats']=stats
+    core=load_core(data,password)
+    core['stats']=update_stats(core['stats'],new,state)
     core['dictionary']=update_dictionary(core['dictionary'],new)
     core['quiz']=update_quiz(core['quiz'],new)
-    part_sizes=save_core(data,core,password,part_count)
+    save_core(data,core,password)
 
-    extra_path=data/'memories-extra.enc'
-    if extra_path.exists():
-        payload=decrypt_obj(load_json(extra_path),password)
-        extra=payload.get('memories',[]) if isinstance(payload,dict) else payload
-    else:
-        extra=[]
-    next_id=1203+len(extra)
+    manifest=load_json(data/'manifest.json')
+    memories=[]
+    for rel in [manifest['base']]+[x['file'] for x in manifest.get('updates',[])]:
+        payload=decrypt_obj(load_json(data/rel),password)
+        memories.extend(payload['memories'] if isinstance(payload,dict) else payload)
+    next_id=max((x.get('id',0) for x in memories if isinstance(x.get('id',0),int)),default=0)+1
+    additions=[]
     for day,groups in sorted(scenes_by_day(new,10).items()):
         for lines in groups:
-            extra.append({'id':next_id,'date':day,'lines':lines}); next_id+=1
-    save_json(extra_path,encrypt_obj({'memories':extra},password))
+            additions.append({'id':next_id,'date':day,'lines':lines})
+            next_id+=1
+    if additions:
+        stamp=max(r['dt'] for r in new).strftime('%Y%m%d')
+        n=1
+        while True:
+            rel=f'memories-updates/{stamp}-{n:03d}.enc'
+            if not (data/rel).exists():
+                break
+            n+=1
+        (data/rel).parent.mkdir(parents=True,exist_ok=True)
+        save_json(data/rel,encrypt_obj({'version':1,'count':len(additions),'memories':additions},password))
+        manifest.setdefault('updates',[]).append({'file':rel,'count':len(additions)})
+        save_json(data/'manifest.json',manifest)
 
-    state['last_processed']=max(r['dt'] for r in new).isoformat(); state_path.write_text(json.dumps(state,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    state['last_processed']=max(r['dt'] for r in new).isoformat()
+    processed.update(rid(r) for r in new)
+    state['processed_record_ids']=sorted(processed)[-5000:]
+    state_path.write_text(json.dumps(state,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print(f'更新完了: {state["last_processed"]}')
-    print(f'core: {part_count} parts / memories: {1202+len(extra)}件 / part sizes: {part_sizes}')
+    print(f'core: 1 file / memories added: {len(additions)}件')
 
-if __name__=='__main__': main()
+if __name__=='__main__':
+    main()

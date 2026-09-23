@@ -1,0 +1,156 @@
+<!DOCTYPE html><html lang="ja" class="notranslate" translate="no"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="google" content="notranslate"><meta name="robots" content="noindex,nofollow,noarchive"><title>われわれ検定｜我らのあそび場</title><link rel="stylesheet" href="../assets/site.css"></head><body><header class="site-header"><div class="site-header__inner"><a class="brand" href="../">我らのあそび場</a><button class="lock-btn" data-lock>鍵をかける</button></div></header><main class="shell app-shell"><div class="backline"><a href="../">← あそび場にもどる</a></div><section class="app-title"><div class="icon">❓</div><div><h1>われわれ検定</h1><p>10問で、われわれ力を測る。</p></div></section><div style="height:24px"></div><section class="panel"><div class="quiz-modes"><div class="quiz-modes-label">問題タイプを選ぶ</div><div class="quiz-tabs"><button class="filter quiz-tab is-active" id="modeWho"><b>発言者あて</b><span>「これ言ったのどっち？」</span></button><button class="filter quiz-tab" id="modeNext"><b>続きあて</b><span>「この次、なんて返した？」</span></button></div></div><div class="progress-wrap"><div class="progress-meta"><span id="progressText">1 / 10</span><span id="score">正解 0</span></div><div class="progress-track"><i id="progressBar"></i></div></div><div id="question" style="margin-top:22px"></div><div id="choices" style="margin-top:14px"></div><div id="result" class="subtle" style="min-height:44px;margin-top:14px"></div><div id="finish" hidden style="margin-top:18px"><div style="font-size:26px;font-weight:800" id="finishScore"></div><p class="subtle">10問おつかれ。</p><button class="press-btn primary" id="restart">もう10問</button></div></section></main><script src="../assets/auth.js"></script><script src="../assets/common.js"></script><script src="../assets/data.js"></script><script>
+(async()=>{
+  wireLock('../');
+
+  const d = (await WareraData.core('../')).quiz;
+  const whoB = document.getElementById('modeWho');
+  const nextB = document.getElementById('modeNext');
+  const question = document.getElementById('question');
+  const choices = document.getElementById('choices');
+  const result = document.getElementById('result');
+  const scoreEl = document.getElementById('score');
+  const progressText = document.getElementById('progressText');
+  const progressBar = document.getElementById('progressBar');
+  const finish = document.getElementById('finish');
+  const finishScore = document.getElementById('finishScore');
+  const restart = document.getElementById('restart');
+
+  const GOAL = 10;
+  const ADVANCE_MS = 900;
+
+  let mode = 'who';
+  let score = 0;
+  let n = 0;
+  let current = null;
+  let answered = false;
+  let deck = [];
+  let advanceTimer = null;
+
+  function source(){
+    return mode === 'who' ? d.who : d.next;
+  }
+
+  function refill(){
+    deck = [...source()];
+    for(let i = deck.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+  }
+
+  function updateProgress(){
+    progressText.textContent = `${Math.min(n + 1, GOAL)} / ${GOAL}`;
+    scoreEl.textContent = `正解 ${score}`;
+    progressBar.style.width = `${Math.min(n, GOAL) / GOAL * 100}%`;
+  }
+
+  function choose(){
+    clearTimeout(advanceTimer);
+
+    if(n >= GOAL){
+      showFinish();
+      return;
+    }
+
+    if(!deck.length) refill();
+
+    current = deck.pop();
+    answered = false;
+    result.textContent = '';
+    finish.hidden = true;
+    question.hidden = false;
+    choices.hidden = false;
+    updateProgress();
+
+    if(mode === 'who'){
+      question.innerHTML =
+        `<div class="subtle">この発言、どっち？</div>
+         <div style="font-size:21px;font-weight:800;line-height:1.65;margin-top:8px">
+           「${esc(current.quote).replaceAll('\n','<br>')}」
+         </div>`;
+
+      choices.innerHTML = ['み','も']
+        .map(x => `<button class="press-btn quiz-choice" data-v="${x}">${x}</button>`)
+        .join('');
+    }else{
+      question.innerHTML =
+        `<div class="subtle">${current.prompt_who}「${esc(current.prompt).replaceAll('\n','<br>')}」</div>
+         <div style="font-size:20px;font-weight:800;margin-top:10px">この次は？</div>`;
+
+      choices.innerHTML = current.options
+        .map((x,i) => `<button class="press-btn quiz-choice" data-v="${i}">${esc(x).replaceAll('\n','<br>')}</button>`)
+        .join('');
+    }
+
+    [...choices.querySelectorAll('button')].forEach(b => b.onclick = () => answer(b));
+  }
+
+  function answer(b){
+    if(answered) return;
+    answered = true;
+
+    [...choices.querySelectorAll('button')].forEach(x => x.disabled = true);
+
+    const ok = mode === 'who'
+      ? b.dataset.v === current.answer
+      : current.options[Number(b.dataset.v)] === current.answer;
+
+    if(ok){
+      score++;
+      b.classList.add('correct');
+      result.textContent = `正解。${fmtDate(current.date)}`;
+    }else{
+      b.classList.add('wrong');
+      result.textContent = `正解は「${current.answer}」。${fmtDate(current.date)}`;
+
+      [...choices.querySelectorAll('button')].forEach(x => {
+        const value = mode === 'who'
+          ? x.dataset.v
+          : current.options[Number(x.dataset.v)];
+
+        if(value === current.answer) x.classList.add('correct');
+      });
+    }
+
+    n++;
+    progressBar.style.width = `${n / GOAL * 100}%`;
+    scoreEl.textContent = `正解 ${score}`;
+
+    advanceTimer = setTimeout(() => {
+      if(n >= GOAL) showFinish();
+      else choose();
+    }, ADVANCE_MS);
+  }
+
+  function showFinish(){
+    clearTimeout(advanceTimer);
+    question.hidden = true;
+    choices.hidden = true;
+    result.textContent = '';
+    finish.hidden = false;
+    finishScore.textContent = `${score} / ${GOAL} 正解`;
+    progressText.textContent = `${GOAL} / ${GOAL}`;
+    progressBar.style.width = '100%';
+  }
+
+  function reset(nextMode = mode){
+    clearTimeout(advanceTimer);
+    mode = nextMode;
+    score = 0;
+    n = 0;
+    deck = [];
+    refill();
+
+    whoB.classList.toggle('is-active', mode === 'who');
+    nextB.classList.toggle('is-active', mode === 'next');
+
+    choose();
+  }
+
+  whoB.onclick = () => reset('who');
+  nextB.onclick = () => reset('next');
+  restart.onclick = () => reset(mode);
+
+  reset('who');
+})();
+</script></body></html>

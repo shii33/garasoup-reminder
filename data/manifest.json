@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "base": "memories-base.enc",
+  "updates": [
+    {
+      "file": "memories-updates/20260924-001.enc",
+      "count": 8
+    }
+  ],
+  "compact_after": 20
+}
