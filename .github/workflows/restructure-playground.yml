@@ -1,0 +1,222 @@
+name: Restructure playground data
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  restructure:
+    if: github.event.head_commit.message == 'Prepare playground data restructure'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Convert split assets to maintainable layout
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import base64, gzip, json, re, shutil
+
+          root = Path('.')
+          old_data = root / 'assets' / 'data'
+          old_site = root / 'assets' / 'site'
+          new_data = root / 'data'
+          updates_dir = new_data / 'memories-updates'
+          new_data.mkdir(exist_ok=True)
+          updates_dir.mkdir(exist_ok=True)
+
+          # 1) Unpack the real site HTML from the temporary sitez-* transport files.
+          site_parts = sorted(old_site.glob('sitez-*.part'))
+          if not site_parts:
+              raise RuntimeError('assets/site/sitez-*.part が見つかりません')
+          packed_site = ''.join(p.read_text(encoding='utf-8') for p in site_parts)
+          site = gzip.decompress(base64.b64decode(packed_site)).decode('utf-8')
+
+          # 2) Join the encrypted core pack. No decrypt/re-encrypt is needed.
+          core_parts = sorted(old_data.glob('corex-*.part'))
+          if not core_parts:
+              raise RuntimeError('assets/data/corex-*.part が見つかりません')
+          core_text = ''.join(p.read_text(encoding='utf-8') for p in core_parts)
+          json.loads(core_text)  # fail before changing anything if the pack is malformed
+          (new_data / 'core.enc').write_text(core_text, encoding='utf-8')
+
+          # 3) Keep the existing encrypted memory base and the latest incremental pack.
+          base_src = old_data / 'memories.enc'
+          extra_src = old_data / 'memories-extra.enc'
+          if not base_src.exists():
+              raise RuntimeError('assets/data/memories.enc が見つかりません')
+          shutil.copy2(base_src, new_data / 'memories-base.enc')
+
+          manifest = {
+              'version': 2,
+              'base': 'memories-base.enc',
+              'updates': [],
+              'compact_after': 20,
+          }
+          if extra_src.exists():
+              json.loads(extra_src.read_text(encoding='utf-8'))
+              update_name = '20260924-001.enc'
+              shutil.copy2(extra_src, updates_dir / update_name)
+              manifest['updates'].append({'file': f'memories-updates/{update_name}', 'count': 8})
+          (new_data / 'manifest.json').write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8'
+          )
+
+          # 4) Point the existing SPA at the clean data layout.
+          core_start = site.find('async function decryptCore(pass){')
+          mem_start = site.find('async function ensureMemories()', core_start)
+          gate_start = site.find('function showGate()', mem_start)
+          if min(core_start, mem_start, gate_start) < 0:
+              raise RuntimeError('サイト内のデータ読込処理を特定できませんでした')
+
+          new_loaders = r'''async function decryptCore(pass){
+            try{
+              const corePack=await fetchPack('./data/core.enc');
+              return await decryptPackObj(corePack,pass);
+            }catch(e){
+              if(e?.message==='データを読み込めませんでした')throw e;
+              throw new Error('あいことば、ちがうかも');
+            }
+          }
+          async function ensureMemories(){
+            if(DATA?.memories)return DATA.memories;
+            if(memoryLoadPromise)return memoryLoadPromise;
+            const pass=sessionStorage.getItem(SKEY)||localStorage.getItem(LKEY);
+            if(!pass)throw new Error('あいことばを入れ直してね');
+
+            memoryLoadPromise=(async()=>{
+              try{
+                const mr=await fetch('./data/manifest.json',{cache:'no-store'});
+                if(!mr.ok)throw new Error('データを読み込めませんでした');
+                const manifest=await mr.json();
+                const files=[manifest.base,...(manifest.updates||[]).map(x=>x.file)];
+                const memories=[];
+                for(const file of files){
+                  const memoryPack=await fetchPack('./data/'+file);
+                  const memoryPayload=await decryptPackObj(memoryPack,pass);
+                  const rows=memoryPayload.memories||memoryPayload;
+                  if(!Array.isArray(rows))throw new Error('思い出データの形式が不正です');
+                  memories.push(...rows);
+                }
+                DATA.memories=memories;
+                return memories;
+              }catch(e){
+                memoryLoadPromise=null;
+                if(e?.message==='データを読み込めませんでした')throw e;
+                throw new Error('思い出データを開けませんでした。再読み込みしてね');
+              }
+            })();
+            return memoryLoadPromise;
+          }
+
+          '''
+          site = site[:core_start] + new_loaders + site[gate_start:]
+          (root / 'index.html').write_text(site, encoding='utf-8')
+
+          # Keep the old direct memories URL working.
+          (root / 'memories.html').write_text(
+              '<!doctype html><html lang="ja"><head><meta charset="utf-8">'
+              '<meta name="robots" content="noindex,nofollow,noarchive">'
+              '<meta http-equiv="refresh" content="0;url=./#memories">'
+              '<script>location.replace("./#memories")</script><title>移動します</title>'
+              '</head><body><a href="./#memories">たまには思い出そうず</a></body></html>',
+              encoding='utf-8'
+          )
+
+          # 5) Adapt the existing updater to core.enc + memory update packs.
+          updater_path = root / 'scripts' / 'update_log.py'
+          updater = updater_path.read_text(encoding='utf-8')
+          updater = updater.replace(
+              "def load_core(data_dir,password):\n    parts=sorted(data_dir.glob('corex-*.part'))\n    if not parts: raise FileNotFoundError('assets/data/corex-*.part が見つかりません')\n    return decrypt_obj(json.loads(''.join(p.read_text(encoding='utf-8') for p in parts)),password), len(parts)\n\ndef save_core(data_dir,core,password,part_count):\n    packed=json.dumps(encrypt_obj(core,password),ensure_ascii=False,separators=(',',':'))\n    size=(len(packed)+part_count-1)//part_count\n    chunks=[packed[i*size:(i+1)*size] for i in range(part_count)]\n    for i,ch in enumerate(chunks,1): (data_dir/f'corex-{i:02d}.part').write_text(ch,encoding='utf-8')\n    return [len(x) for x in chunks]\n",
+              "def load_core(data_dir,password):\n    return decrypt_obj(load_json(data_dir/'core.enc'),password)\n\ndef save_core(data_dir,core,password):\n    save_json(data_dir/'core.enc',encrypt_obj(core,password))\n"
+          )
+          updater = updater.replace("data=root/'assets'/'data'", "data=root/'data'")
+          old_block = """    core,part_count=load_core(data,password)\n    stats=update_stats(core['stats'],new,state); core['stats']=stats\n    core['dictionary']=update_dictionary(core['dictionary'],new)\n    core['quiz']=update_quiz(core['quiz'],new)\n    part_sizes=save_core(data,core,password,part_count)\n\n    mempack=load_json(data/'memories.enc'); payload=decrypt_obj(mempack,password); memories=payload['memories'] if isinstance(payload,dict) else payload\n    next_id=max((x.get('id',0) for x in memories),default=0)+1\n    for day,groups in sorted(scenes_by_day(new,10).items()):\n        for lines in groups:\n            memories.append({'id':next_id,'date':day,'lines':lines}); next_id+=1\n    save_json(data/'memories.enc',encrypt_obj({'version':1,'count':len(memories),'memories':memories},password))\n\n    state['last_processed']=max(r['dt'] for r in new).isoformat(); state_path.write_text(json.dumps(state,ensure_ascii=False,indent=2)+'\\n',encoding='utf-8')\n    print(f'更新完了: {state[\"last_processed\"]}')\n    print(f'core: {part_count} parts / memories: {len(memories)}件 / part sizes: {part_sizes}')\n"""
+          new_block = """    core=load_core(data,password)\n    stats=update_stats(core['stats'],new,state); core['stats']=stats\n    core['dictionary']=update_dictionary(core['dictionary'],new)\n    core['quiz']=update_quiz(core['quiz'],new)\n    save_core(data,core,password)\n\n    manifest=load_json(data/'manifest.json')\n    memories=[]\n    for rel in [manifest['base']]+[x['file'] for x in manifest.get('updates',[])]:\n        payload=decrypt_obj(load_json(data/rel),password)\n        memories.extend(payload['memories'] if isinstance(payload,dict) else payload)\n    next_id=max((x.get('id',0) for x in memories),default=0)+1\n    additions=[]\n    for day,groups in sorted(scenes_by_day(new,10).items()):\n        for lines in groups:\n            additions.append({'id':next_id,'date':day,'lines':lines}); next_id+=1\n    if additions:\n        stamp=max(r['dt'] for r in new).strftime('%Y%m%d')\n        n=1\n        while True:\n            rel=f'memories-updates/{stamp}-{n:03d}.enc'\n            if not (data/rel).exists(): break\n            n+=1\n        (data/rel).parent.mkdir(parents=True,exist_ok=True)\n        save_json(data/rel,encrypt_obj({'version':1,'count':len(additions),'memories':additions},password))\n        manifest.setdefault('updates',[]).append({'file':rel,'count':len(additions)})\n        save_json(data/'manifest.json',manifest)\n\n    state['last_processed']=max(r['dt'] for r in new).isoformat(); state_path.write_text(json.dumps(state,ensure_ascii=False,indent=2)+'\\n',encoding='utf-8')\n    print(f'更新完了: {state[\"last_processed\"]}')\n    print(f'core: 1 file / memories added: {len(additions)}件')\n"""
+          if old_block not in updater:
+              raise RuntimeError('update_log.py の更新対象ブロックを特定できませんでした')
+          updater = updater.replace(old_block, new_block)
+          updater_path.write_text(updater, encoding='utf-8')
+
+          # 6) Add a compaction command: merge update packs into the base and clear them.
+          compact = r'''#!/usr/bin/env python3
+          import argparse, getpass, json, os
+          from pathlib import Path
+          from update_log import decrypt_obj, encrypt_obj, load_json, save_json
+
+          def main():
+              ap=argparse.ArgumentParser(description='思い出の差分をbaseへ統合')
+              ap.add_argument('--root',default=str(Path(__file__).resolve().parents[1]))
+              ap.add_argument('--password',default=os.getenv('WARERA_PASSPHRASE'))
+              args=ap.parse_args(); root=Path(args.root); data=root/'data'
+              password=args.password or getpass.getpass('合言葉: ')
+              manifest=load_json(data/'manifest.json')
+              base_payload=decrypt_obj(load_json(data/manifest['base']),password)
+              base=base_payload['memories'] if isinstance(base_payload,dict) else base_payload
+              updates=manifest.get('updates',[])
+              if not updates:
+                  print('まとめる差分はありません。'); return
+              by_id={x.get('id'):x for x in base}
+              added=0
+              for item in updates:
+                  payload=decrypt_obj(load_json(data/item['file']),password)
+                  rows=payload['memories'] if isinstance(payload,dict) else payload
+                  for row in rows:
+                      key=row.get('id')
+                      if key not in by_id:
+                          by_id[key]=row; added+=1
+              merged=sorted(by_id.values(),key=lambda x:(x.get('date',''),x.get('id',0)))
+              save_json(data/manifest['base'],encrypt_obj({'version':1,'count':len(merged),'memories':merged},password))
+              for item in updates:
+                  p=data/item['file']
+                  if p.exists(): p.unlink()
+              manifest['updates']=[]
+              save_json(data/'manifest.json',manifest)
+              print(f'統合完了: +{added}件 / 合計{len(merged)}件')
+
+          if __name__=='__main__': main()
+          '''
+          compact = '\n'.join(line[10:] if line.startswith('          ') else line for line in compact.splitlines()).lstrip()
+          compact_path = root / 'scripts' / 'compact_memories.py'
+          compact_path.write_text(compact, encoding='utf-8')
+
+          readme = '''# ログ更新\n\n普段は `_chat.txt` 全体でも、追加分のベタ貼りでも更新できます。\n\n```bash\npython scripts/update_log.py _chat.txt\n```\n\nベタ貼りの場合は標準入力で渡します。\n\n思い出の差分が溜まったら、次で `memories-base.enc` にまとめます。\n\n```bash\npython scripts/compact_memories.py\n```\n\nデータ構成は `data/core.enc`、`data/memories-base.enc`、`data/memories-updates/`、`data/manifest.json` です。\n'''
+          (root/'scripts'/'README.md').write_text(readme,encoding='utf-8')
+
+          # 7) Remove the split transport layout only after every conversion above succeeded.
+          shutil.rmtree(root/'assets')
+          PY
+
+      - name: Validate generated files
+        shell: bash
+        run: |
+          test -s index.html
+          test -s data/core.enc
+          test -s data/memories-base.enc
+          test -s data/manifest.json
+          python3 -m py_compile scripts/update_log.py scripts/compact_memories.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          json.loads(Path('data/core.enc').read_text())
+          m=json.loads(Path('data/manifest.json').read_text())
+          assert Path('data',m['base']).exists()
+          for x in m['updates']: assert Path('data',x['file']).exists()
+          assert not Path('assets').exists()
+          print('validation ok')
+          PY
+
+      - name: Commit restructured layout
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Simplify playground data layout"
+          git push
