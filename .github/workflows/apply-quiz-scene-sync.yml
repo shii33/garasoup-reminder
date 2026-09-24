@@ -22,7 +22,6 @@ jobs:
           mkdir -p /tmp/quiz-sync
           cat _sync/bundle.part-* | base64 -d > /tmp/quiz-sync/bundle.tgz
           tar -xzf /tmp/quiz-sync/bundle.tgz -C /tmp/quiz-sync
-          cp /tmp/quiz-sync/core.enc data/core.enc
           cp /tmp/quiz-sync/quiz-scenes.enc data/quiz-scenes.enc
           cp /tmp/quiz-sync/data.js assets/data.js
           cp /tmp/quiz-sync/quiz.html quiz/index.html
@@ -34,17 +33,17 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import json, pathlib, py_compile
-          for p in ['data/core.enc','data/quiz-scenes.enc']:
-              obj=json.loads(pathlib.Path(p).read_text(encoding='utf-8'))
-              assert obj.get('cipher')=='AES-256-GCM'
-              assert obj.get('ciphertext')
+          obj=json.loads(pathlib.Path('data/quiz-scenes.enc').read_text(encoding='utf-8'))
+          assert obj.get('cipher')=='AES-256-GCM'
+          assert obj.get('ciphertext')
           py_compile.compile('scripts/update_log.py', doraise=True)
           q=pathlib.Path('quiz/index.html').read_text(encoding='utf-8')
           d=pathlib.Path('assets/data.js').read_text(encoding='utf-8')
           day=pathlib.Path('on-this-day/index.html').read_text(encoding='utf-8')
-          assert 'WareraData.quizScenes' in q
+          assert 'WareraData.quizScenePack' in q
           assert 'quiz-scenes.enc' in d
-          assert "source='quiz'" in day or 'source=quiz' in q
+          assert 'source=quiz' in q
+          assert "source==='quiz'" in day or 'source === \'quiz\'' in day
           PY
       - name: Commit final layout
         shell: bash
