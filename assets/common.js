@@ -91,16 +91,17 @@ function fmtMinutes(min){min=Math.round(Number(min)||0);const h=Math.floor(min/6
   function drawCoverCircle(ctx,img,cx,cy,size){const r=size/2,zoom=1.26,scale=Math.max(size/img.width,size/img.height)*zoom,sw=size/scale,sh=size/scale,sx=(img.width-sw)/2,sy=(img.height-sh)/2;ctx.save();ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.clip();ctx.drawImage(img,sx,sy,sw,sh,cx-r,cy-r,size,size);ctx.restore()}
   async function sceneBlob(item){
     if(!item||!Array.isArray(item.lines)||!item.lines.length)throw new Error('share scene is empty');
-    const W=1080,outer=58,shadow=14,cardX=outer,cardY=outer,cardW=W-outer*2,inner=48,avatar=62,gap=18,bubbleMax=650,bubblePX=28,bubblePY=20,lineH=40,rowGap=20;
+    const W=1080,outer=58,shadow=14,cardX=outer,cardY=outer,cardW=W-outer*2,inner=48,dateH=66,avatar=62,gap=18,bubbleMax=650,bubblePX=28,bubblePY=20,lineH=40,rowGap=20;
     const tmp=document.createElement('canvas').getContext('2d');tmp.font='29px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';
     const rows=item.lines.map(l=>{const lines=wrapText(tmp,l.text,bubbleMax-bubblePX*2),textW=Math.max(...lines.map(t=>tmp.measureText(t).width),60),bw=Math.min(bubbleMax,Math.max(145,textW+bubblePX*2)),bh=Math.max(82,lines.length*lineH+bubblePY*2);return {...l,lines,bw,bh,rh:Math.max(avatar,bh)}});
-    const contentH=rows.reduce((s,r)=>s+r.rh+rowGap,0)-rowGap,cardH=inner*2+contentH,H=cardY+cardH+shadow+outer;
+    const contentH=rows.reduce((s,r)=>s+r.rh+rowGap,0)-rowGap,cardH=inner+dateH+contentH+inner,H=cardY+cardH+shadow+outer;
     const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;const ctx=canvas.getContext('2d');
     ctx.fillStyle='#f4f4f4';ctx.fillRect(0,0,W,H);
     ctx.fillStyle='rgba(0,0,0,.42)';roundRect(ctx,cardX+shadow,cardY+shadow,cardW,cardH,22);ctx.fill();
     ctx.fillStyle='#fff';roundRect(ctx,cardX,cardY,cardW,cardH,22);ctx.fill();ctx.strokeStyle='#111';ctx.lineWidth=2;roundRect(ctx,cardX,cardY,cardW,cardH,22);ctx.stroke();
+    const dateText=fmtDate(item.date||'');ctx.fillStyle='#555';ctx.font='700 24px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';ctx.fillText(dateText,cardX+inner,cardY+inner+24);ctx.strokeStyle='#e1e1e1';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cardX+inner,cardY+inner+dateH-12);ctx.lineTo(cardX+cardW-inner,cardY+inner+dateH-12);ctx.stroke();
     let mi=null,mo=null;try{[mi,mo]=await Promise.all([loadImg(new URL('mi.jpg',AVATAR_BASE).href),loadImg(new URL('mo.jpg',AVATAR_BASE).href)])}catch(e){}
-    const me=current();let y=cardY+inner;
+    const me=current();let y=cardY+inner+dateH;
     for(const r of rows){
       const self=r.who===me,left=cardX+inner,right=cardX+cardW-inner,ax=self?right-avatar/2:left+avatar/2,bx=self?right-avatar-gap-r.bw:left+avatar+gap;
       ctx.fillStyle=r.who==='み'?'#fff0f5':'#eef7ff';roundRect(ctx,bx,y,r.bw,r.bh,20);ctx.fill();ctx.strokeStyle='#111';ctx.lineWidth=1.5;roundRect(ctx,bx,y,r.bw,r.bh,20);ctx.stroke();
