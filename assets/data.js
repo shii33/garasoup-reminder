@@ -5,7 +5,24 @@
     if(!memoriesPromise)memoriesPromise=(async()=>{const manifest=await fetch(home+'data/manifest.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('思い出データを開けませんでした');return r.json()});const packs=[manifest.base,...(manifest.updates||[]).map(x=>x.file)],rows=[];for(const file of packs){const d=await WareraAuth.load(home+'data/'+file,home);rows.push(...(d.memories||[]))}return rows})();return memoriesPromise
   }
   async function quizScenePack(home='../'){if(!quizScenePackPromise)quizScenePackPromise=WareraAuth.load(home+'data/quiz-scenes.enc',home);return quizScenePackPromise}
-  async function expandedAnalytics(home='../'){if(!expandedAnalyticsPromise)expandedAnalyticsPromise=WareraAuth.load(home+'data/expanded/analytics.enc',home);return expandedAnalyticsPromise}
+  async function expandedAnalytics(home='../'){
+    if(!expandedAnalyticsPromise)expandedAnalyticsPromise=(async()=>{
+      const d=await WareraAuth.load(home+'data/expanded/analytics.enc',home);
+      let ann=(d.anniversaries||[]).filter(x=>!String(x?.label||x?.title||'').includes('次回の全量更新'));
+      if(!ann.length){
+        const c=await core(home),s=c.stats||{},rows=[];
+        if(s.period?.start)rows.push({label:'われわれログ開始記念日',date:s.period.start,detail:'ここからログが始まった'});
+        if(s.peak_day?.date)rows.push({label:'一番しゃべった日記念日',date:s.peak_day.date,detail:`${Number(s.peak_day.count||0).toLocaleString()}通`});
+        if(s.longest_call?.date)rows.push({label:'最長通話記念日',date:s.longest_call.date,detail:`${Math.round(Number(s.longest_call.minutes||0))}分`});
+        if(s.rapid_rally?.start)rows.push({label:'最長ラリー記念日',date:String(s.rapid_rally.start).slice(0,10),detail:`${Number(s.rapid_rally.messages||0).toLocaleString()}通`});
+        (d.top_days||[]).slice(1,6).forEach((x,i)=>rows.push({label:`よくしゃべった日 #${i+2}`,date:x.date,detail:`${Number(x.count||0).toLocaleString()}通`}));
+        ann=rows;
+      }
+      d.anniversaries=ann;
+      return d;
+    })();
+    return expandedAnalyticsPromise
+  }
   function quizKey(item){if(!item)return'';return item.type==='next'||item.prompt!=null?`next|${item.date||''}|${item.prompt||''}|${item.answer||''}`:`who|${item.date||''}|${item.quote||''}`}
   function readableScene(scene){const lines=(scene?.lines||[]).filter(x=>x&&String(x.text||'').trim());if(lines.length<3)return false;const lengths=lines.map(x=>String(x.text||'').length),total=lengths.reduce((a,b)=>a+b,0),longest=Math.max(...lengths,0),joined=lines.map(x=>String(x.text||'')).join('\n');if(longest>700||total>1500)return false;if((joined.match(/続きを読む/g)||[]).length>=1&&total>650)return false;return true}
   function sceneSignature(lines){return lines.map(x=>`${x.who}\0${x.text}`).join('\1')}
