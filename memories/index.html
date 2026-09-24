@@ -9,51 +9,11 @@
   const scene=document.getElementById('scene'),date=document.getElementById('date'),next=document.getElementById('next'),around=document.getElementById('around'),shareScene=document.getElementById('shareScene'),openDay=document.getElementById('openDay');
   const RK='warera_memory_recent';
   let current=null,aroundMode=false;
-
-  function chatNode(item){
-    const wrap=document.createElement('div');wrap.className='chat-scene';
-    (item?.lines||[]).forEach(x=>{const row=document.createElement('div');row.className='chat-line '+(x.who==='み'?'mine':'theirs');const w=document.createElement('span');w.className='who';w.textContent=x.who;const bub=document.createElement('div');bub.className='bubble';bub.textContent=x.text;x.who==='み'?row.append(bub,w):row.append(w,bub);wrap.append(row)});
-    return wrap;
-  }
-  function dayPool(item){
-    const all=grouped.get(item.date)||[];
-    const r=all.filter(WareraData.readableScene);
-    return r.length?r:all;
-  }
-  function renderSingle(item){
-    current=item;aroundMode=false;date.textContent=(item.date||'').replaceAll('-','.');scene.replaceChildren();scene.append(chatNode(item));
-    around.textContent='この周辺を見る';
-    openDay.href=`../on-this-day/?date=${encodeURIComponent(item.date)}&scene=${encodeURIComponent(item.id)}&around=1`;
-  }
-  function renderAround(item){
-    current=item;aroundMode=true;date.textContent=(item.date||'').replaceAll('-','.');scene.replaceChildren();
-    const pool=dayPool(item),idx=pool.findIndex(x=>String(x.id)===String(item.id));
-    const wrap=document.createElement('div');wrap.className='memory-around';
-    if(idx<0){wrap.append(chatNode(item));scene.append(wrap);return}
-    const from=Math.max(0,idx-1),to=Math.min(pool.length-1,idx+1);
-    for(let i=from;i<=to;i++){
-      const block=document.createElement('section');block.className='memory-block'+(i===idx?' is-current':'');
-      const label=document.createElement('div');label.className='memory-label';label.textContent=i===idx?'いま引いた場面':i<idx?'少し前':'少しあと';
-      block.append(label,chatNode(pool[i]));wrap.append(block);
-    }
-    scene.append(wrap);around.textContent='1場面に戻す';
-    openDay.href=`../on-this-day/?date=${encodeURIComponent(item.date)}&scene=${encodeURIComponent(item.id)}&around=1`;
-  }
-  async function pick(){
-    next.disabled=true;
-    try{
-      let recent=[];try{recent=JSON.parse(localStorage.getItem(RK)||'[]')}catch(e){}
-      const recentSet=new Set(recent);
-      let pool=source.filter(x=>!recentSet.has(String(x.id)));
-      if(!pool.length){recent=[];pool=source}
-      const chosen=pool[Math.floor(Math.random()*pool.length)];
-      if(!chosen)return;
-      recent.push(String(chosen.id));localStorage.setItem(RK,JSON.stringify(recent.slice(-30)));
-      renderSingle(chosen);
-    }finally{next.disabled=false}
-  }
-  around.onclick=()=>{if(!current)return;aroundMode?renderSingle(current):renderAround(current)};
-  shareScene.onclick=async()=>{if(!current)return;shareScene.disabled=true;try{await WareraShare.shareScene(current)}finally{shareScene.disabled=false}};
-  next.onclick=pick;pick();
+  function chatNode(item){const wrap=document.createElement('div');wrap.className='chat-scene';(item?.lines||[]).forEach(x=>{const row=document.createElement('div');row.className='chat-line '+(x.who==='み'?'mine':'theirs');const w=document.createElement('span');w.className='who';w.textContent=x.who;const bub=document.createElement('div');bub.className='bubble';bub.textContent=x.text;x.who==='み'?row.append(bub,w):row.append(w,bub);wrap.append(row)});return wrap}
+  function dayPool(item){const all=grouped.get(item.date)||[];const r=all.filter(WareraData.readableScene);return r.length?r:all}
+  function renderSingle(item){current=item;aroundMode=false;date.textContent=(item.date||'').replaceAll('-','.');scene.replaceChildren();scene.append(chatNode(item));around.textContent='この周辺を見る';openDay.href=`../on-this-day/?date=${encodeURIComponent(item.date)}&scene=${encodeURIComponent(item.id)}&around=1`}
+  function renderAround(item){current=item;aroundMode=true;date.textContent=(item.date||'').replaceAll('-','.');scene.replaceChildren();const pool=dayPool(item),idx=pool.findIndex(x=>String(x.id)===String(item.id));const wrap=document.createElement('div');wrap.className='memory-around';if(idx<0){wrap.append(chatNode(item));scene.append(wrap);return}const from=Math.max(0,idx-1),to=Math.min(pool.length-1,idx+1);for(let i=from;i<=to;i++){const block=document.createElement('section');block.className='memory-block'+(i===idx?' is-current':'');const label=document.createElement('div');label.className='memory-label';label.textContent=i===idx?'いま引いた場面':i<idx?'少し前':'少しあと';block.append(label,chatNode(pool[i]));wrap.append(block)}scene.append(wrap);around.textContent='1場面に戻す';openDay.href=`../on-this-day/?date=${encodeURIComponent(item.date)}&scene=${encodeURIComponent(item.id)}&around=1`}
+  async function pick(){next.disabled=true;try{let recent=[];try{recent=JSON.parse(localStorage.getItem(RK)||'[]')}catch(e){}const recentSet=new Set(recent);let pool=source.filter(x=>!recentSet.has(String(x.id)));if(!pool.length){recent=[];pool=source}const chosen=pool[Math.floor(Math.random()*pool.length)];if(!chosen)return;recent.push(String(chosen.id));localStorage.setItem(RK,JSON.stringify(recent.slice(-150)));renderSingle(chosen)}finally{next.disabled=false}}
+  around.onclick=()=>{if(!current)return;aroundMode?renderSingle(current):renderAround(current)};shareScene.onclick=async()=>{if(!current)return;shareScene.disabled=true;try{await WareraShare.shareScene(current)}finally{shareScene.disabled=false}};next.onclick=pick;pick();
 })();
 </script></body></html>
