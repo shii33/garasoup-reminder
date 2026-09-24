@@ -1,5 +1,5 @@
 function wireLock(home='../'){const b=document.querySelector('[data-lock]');if(b)b.addEventListener('click',()=>{WareraAuth.clear();location.href=home;});}
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));}
 function fmtDate(s){if(!s)return'';const [y,m,d]=s.split('-');return `${y}.${m}.${d}`;}
 function fmtMinutes(min){min=Math.round(Number(min)||0);const h=Math.floor(min/60),m=min%60;return h?`${h}時間${m?m+'分':''}`:`${m}分`;}
 
@@ -88,7 +88,7 @@ function fmtMinutes(min){min=Math.round(Number(min)||0);const h=Math.floor(min/6
   function toast(msg){css();document.querySelector('.warera-share-toast')?.remove();const t=document.createElement('div');t.className='warera-share-toast';t.textContent=msg;document.body.append(t);setTimeout(()=>t.remove(),1800)}
   async function shareScene(item){
     const blob=await sceneBlob(item),name=`warera-${item.date||'scene'}.png`,file=new File([blob],name,{type:'image/png'});
-    if(navigator.share&&navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:'我らのあそび場'});return}catch(e){if(e?.name==='AbortError')return}}
+    if(navigator.share&&navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file]});return}catch(e){if(e?.name==='AbortError')return}}
     if(navigator.clipboard&&window.ClipboardItem){try{await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);toast('画像をコピーしたよ');return}catch(e){}}
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('画像を保存したよ');
   }
