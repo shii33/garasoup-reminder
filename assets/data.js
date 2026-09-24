@@ -1,6 +1,7 @@
 (() => {
   let corePromise;
   let memoriesPromise;
+  let quizScenePackPromise;
 
   async function core(home='../'){
     if(!corePromise) corePromise=WareraAuth.load(home+'data/core.enc',home);
@@ -26,6 +27,17 @@
     return memoriesPromise;
   }
 
+  async function quizScenePack(home='../'){
+    if(!quizScenePackPromise) quizScenePackPromise=WareraAuth.load(home+'data/quiz-scenes.enc',home);
+    return quizScenePackPromise;
+  }
+
+  function quizKey(item){
+    if(!item) return '';
+    if(item.type==='next'||item.prompt!=null) return `next|${item.date||''}|${item.prompt||''}|${item.answer||''}`;
+    return `who|${item.date||''}|${item.quote||''}`;
+  }
+
   function readableScene(scene){
     const lines=(scene?.lines||[]).filter(x=>x&&String(x.text||'').trim());
     if(lines.length<3) return false;
@@ -33,19 +45,24 @@
     const total=lengths.reduce((a,b)=>a+b,0);
     const longest=Math.max(...lengths,0);
     const joined=lines.map(x=>String(x.text||'')).join('\n');
-    // 長文コピペや「続きを読む」主体の場面は、ランダム表示では避ける。
     if(longest>700 || total>1500) return false;
     if((joined.match(/続きを読む/g)||[]).length>=1 && total>650) return false;
     return true;
   }
 
-  function findSceneForQuiz(rows,item){
+  function findSceneForQuiz(rows,item,contextPack=null){
     if(!item) return null;
-    if(item.scene_id!=null){
-      const byId=rows.find(x=>String(x.id)===String(item.scene_id));
-      if(byId) return byId;
+    const contextRows=contextPack?.scenes||[];
+    const mappedId=contextPack?.map?.[quizKey(item)];
+    if(mappedId!=null){
+      const mapped=contextRows.find(x=>String(x.id)===String(mappedId));
+      if(mapped) return mapped;
     }
-    const sameDay=rows.filter(x=>!item.date||x.date===item.date);
+    if(item.scene_id!=null){
+      const exact=[...contextRows,...(rows||[])].find(x=>String(x.id)===String(item.scene_id));
+      if(exact) return exact;
+    }
+    const sameDay=(rows||[]).filter(x=>!item.date||x.date===item.date);
     const targets=item.type==='next'
       ? [item.prompt,item.answer].filter(Boolean)
       : [item.quote].filter(Boolean);
@@ -62,5 +79,5 @@
     return bestScore?best:null;
   }
 
-  window.WareraData={core,memories,readableScene,findSceneForQuiz};
+  window.WareraData={core,memories,quizScenePack,quizKey,readableScene,findSceneForQuiz};
 })();

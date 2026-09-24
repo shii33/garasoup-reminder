@@ -1,113 +1,34 @@
-<!DOCTYPE html><html lang="ja" class="notranslate" translate="no"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="google" content="notranslate"><meta name="robots" content="noindex,nofollow,noarchive"><title>われわれ検定｜我らのあそび場</title><link rel="stylesheet" href="../assets/site.css"><style>.quiz-question-label{color:#666;font-size:13px}.quiz-question-text{font-size:23px;font-weight:800;line-height:1.7;margin-top:8px}.quiz-prompt-text{font-size:21px;font-weight:800;line-height:1.65;color:#111}.quiz-next-label{font-size:13px;font-weight:700;color:#666;margin-top:10px}.quiz-choice{width:100%;height:auto!important;min-height:50px;padding:12px 14px!important;text-align:left;font-size:15px;line-height:1.55;white-space:normal;overflow-wrap:anywhere;word-break:break-word}.quiz-result-card{border:1px solid #111;border-radius:10px;padding:16px;background:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.35)}.quiz-result-main{display:flex;gap:12px;align-items:center}.quiz-mark{width:48px;height:48px;display:grid;place-items:center;font-size:42px;font-weight:900;line-height:1}.quiz-mark.ok{color:#d34848}.quiz-mark.ng{color:#3276c8}.quiz-result-title{font-size:22px;font-weight:800}.quiz-result-answer{margin-top:4px;font-size:14px;line-height:1.6}.quiz-context{margin-top:14px;padding-top:14px;border-top:1px solid #ddd}.quiz-context[hidden]{display:none}.quiz-context .chat-scene{margin-bottom:12px}.quiz-result-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.quiz-result-actions .press-btn{height:auto;min-height:40px;padding:9px 12px;white-space:normal}.finish-comment{font-size:20px;font-weight:800;margin:7px 0 16px}.finish-score-big{font-size:32px;font-weight:800}@media(max-width:580px){input,textarea,select{font-size:16px!important}.quiz-tabs{grid-template-columns:1fr 1fr!important;gap:7px}.quiz-tab{min-height:52px!important;padding:8px 9px!important}.quiz-tab b{font-size:12px}.quiz-tab span{font-size:9px}.quiz-modes{margin-bottom:12px}.progress-wrap{margin-top:10px}.quiz-question-text{font-size:22px}.quiz-prompt-text{font-size:20px}.quiz-choice{font-size:16px}.quiz-result-card{padding:14px}.quiz-result-actions{gap:7px}.quiz-result-actions .press-btn{flex:1 1 140px}.quiz-result-actions .primary{order:-1;flex-basis:100%}}</style></head><body><header class="site-header"><div class="site-header__inner"><a class="brand" href="../">我らのあそび場</a><button class="lock-btn" data-lock>鍵をかける</button></div></header><main class="shell app-shell"><div class="backline"><a href="../">← あそび場にもどる</a></div><section class="app-title"><div class="icon">❓</div><div><h1>われわれ検定</h1><p>10問で、われわれ力を測る。</p></div></section><div style="height:24px"></div><section class="panel"><div class="quiz-modes"><div class="quiz-modes-label">問題タイプを選ぶ</div><div class="quiz-tabs"><button class="filter quiz-tab is-active" id="modeWho"><b>発言者あて</b><span>「これ言ったのどっち？」</span></button><button class="filter quiz-tab" id="modeNext"><b>続きあて</b><span>「この次、なんて返した？」</span></button></div></div><div class="progress-wrap"><div class="progress-meta"><span id="progressText">1 / 10</span><span id="score">正解 0</span></div><div class="progress-track"><i id="progressBar"></i></div></div><div id="question" style="margin-top:22px"></div><div id="choices" style="margin-top:14px"></div><div id="result" style="min-height:44px;margin-top:14px"></div><div id="finish" hidden style="margin-top:18px"><div class="finish-score-big" id="finishScore"></div><div class="finish-comment" id="finishComment"></div><button class="press-btn primary" id="restart">もう10問</button></div></section></main><script src="../assets/auth.js"></script><script src="../assets/common.js"></script><script src="../assets/data.js"></script><script>
+<!DOCTYPE html><html lang="ja" class="notranslate" translate="no"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="google" content="notranslate"><meta name="robots" content="noindex,nofollow,noarchive"><title>われわれ検定｜我らのあそび場</title><link rel="stylesheet" href="../assets/site.css"><style>
+.quiz-question-label{color:#666;font-size:13px}.quiz-question-text{font-size:23px;font-weight:800;line-height:1.7;margin-top:8px}.quiz-prompt-text{font-size:21px;font-weight:800;line-height:1.65;color:#111}.quiz-next-label{font-size:13px;font-weight:700;color:#666;margin-top:8px}.quiz-choice{width:100%;height:auto!important;min-height:50px;padding:12px 14px!important;text-align:left;font-size:15px;line-height:1.55;white-space:normal!important;overflow-wrap:anywhere;word-break:break-word}.quiz-result-card{border:1px solid #111;border-radius:10px;padding:16px;background:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.35)}.quiz-result-main{display:flex;gap:12px;align-items:center}.quiz-mark{width:48px;height:48px;display:grid;place-items:center;font-size:42px;font-weight:900;line-height:1}.quiz-mark.ok{color:#d34848}.quiz-mark.ng{color:#3276c8}.quiz-result-title{font-size:22px;font-weight:800}.quiz-result-answer{margin-top:4px;font-size:14px;line-height:1.6}.quiz-context{margin-top:14px;padding-top:14px;border-top:1px solid #ddd}.quiz-context[hidden]{display:none}.quiz-context .chat-scene{margin-bottom:12px}.quiz-result-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.quiz-result-actions .press-btn{height:auto;min-height:40px;padding:9px 12px;white-space:normal}.finish-comment{font-size:20px;font-weight:800;margin:7px 0 16px}.finish-score-big{font-size:32px;font-weight:800}
+@media(max-width:580px){input,textarea,select{font-size:16px!important}.quiz-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.quiz-tab{min-height:52px;padding:8px 9px}.quiz-tab b{font-size:11.5px}.quiz-tab span{font-size:9.5px}.quiz-question-text{font-size:22px}.quiz-prompt-text{font-size:20px}.quiz-choice{font-size:16px}.quiz-result-actions{display:grid;grid-template-columns:1fr 1fr}.quiz-result-actions #nextNow{grid-column:1/-1;order:-1;width:100%}}
+</style></head><body><header class="site-header"><div class="site-header__inner"><a class="brand" href="../">我らのあそび場</a><button class="lock-btn" data-lock>鍵をかける</button></div></header><main class="shell app-shell"><div class="backline"><a href="../">← あそび場にもどる</a></div><section class="app-title"><div class="icon">❓</div><div><h1>われわれ検定</h1><p>10問で、われわれ力を測る。</p></div></section><div style="height:24px"></div><section class="panel"><div class="quiz-modes"><div class="quiz-modes-label">問題タイプを選ぶ</div><div class="quiz-tabs"><button class="filter quiz-tab is-active" id="modeWho"><b>発言者あて</b><span>「これ言ったのどっち？」</span></button><button class="filter quiz-tab" id="modeNext"><b>続きあて</b><span>「この次、なんて返した？」</span></button></div></div><div class="progress-wrap"><div class="progress-meta"><span id="progressText">1 / 10</span><span id="score">正解 0</span></div><div class="progress-track"><i id="progressBar"></i></div></div><div id="question" style="margin-top:18px"></div><div id="choices" style="margin-top:12px"></div><div id="result" style="min-height:44px;margin-top:12px"></div><div id="finish" hidden style="margin-top:18px"><div class="finish-score-big" id="finishScore"></div><div class="finish-comment" id="finishComment"></div><button class="press-btn primary" id="restart">もう10問</button></div></section></main><script src="../assets/auth.js"></script><script src="../assets/common.js"></script><script src="../assets/data.js"></script><script>
 (async()=>{
   wireLock('../');
-
-  const [core,memories] = await Promise.all([WareraData.core('../'),WareraData.memories('../')]);
-  const d = core.quiz;
-  const matched={who:[],next:[]};
-  for(const key of ['who','next']){
-    for(const item of (d[key]||[])){
-      const scene=WareraData.findSceneForQuiz(memories,item);
-      if(scene) matched[key].push({...item,_scene:scene,scene_id:scene.id});
-    }
-  }
-  const whoB = document.getElementById('modeWho');
-  const nextB = document.getElementById('modeNext');
-  const question = document.getElementById('question');
-  const choices = document.getElementById('choices');
-  const result = document.getElementById('result');
-  const scoreEl = document.getElementById('score');
-  const progressText = document.getElementById('progressText');
-  const progressBar = document.getElementById('progressBar');
-  const finish = document.getElementById('finish');
-  const finishScore = document.getElementById('finishScore');
-  const finishComment = document.getElementById('finishComment');
-  const restart = document.getElementById('restart');
-
-  const GOAL = 10;
-  let mode = 'who';
-  let score = 0;
-  let n = 0;
-  let current = null;
-  let answered = false;
-  let deck = [];
-
-  const RESULT_COMMENTS={
-    perfect:['本人か？','10問とも分かるの、もうログ側の人。','われわれ検定、閉幕。知りすぎ。','全問正解。こわ。','記憶力が当事者。'],
-    great:['かなりわれわれ','だいぶ会話が染み込んでる。','そのへんのログなら任せろ状態。','惜しい。ほぼ本人。','ちゃんとわれわれしてる。'],
-    good:['まあまあわれわれ','記憶、必要なとこは残ってる。','半分以上いけてるのでヨシ。','ところどころ鮮明。ところどころ霧。','思い出ガチャの摂取量が効いてる。'],
-    low:['記憶、どこ置いてきた','知ってる。たぶん知ってる。たぶん。','ログを見たら「あーーー！」ってなるやつ。','脳内キャッシュが消えてる。','雰囲気でわれわれしている。'],
-    tiny:['初対面？','はじめまして、われわれです。','ログ、全部新鮮。','逆に毎回楽しめて得。','記憶よりライブ感で生きてる。']
+  const [core,memories,quizScenePack] = await Promise.all([WareraData.core('../'),WareraData.memories('../'),WareraData.quizScenePack('../')]);
+  const d=core.quiz,whoB=document.getElementById('modeWho'),nextB=document.getElementById('modeNext'),question=document.getElementById('question'),choices=document.getElementById('choices'),result=document.getElementById('result'),scoreEl=document.getElementById('score'),progressText=document.getElementById('progressText'),progressBar=document.getElementById('progressBar'),finish=document.getElementById('finish'),finishScore=document.getElementById('finishScore'),finishComment=document.getElementById('finishComment'),restart=document.getElementById('restart');
+  const GOAL=10;let mode='who',score=0,n=0,current=null,answered=false,deck=[];
+  const comments={
+    10:['本人か？','全問正解。こわ。','記憶力が当事者。','10問とも分かるの、もうログ側の人。','われわれ検定、卒業です。'],
+    9:['惜しい。ほぼ本人。','1問だけ世界線が違った。','9/10、かなりわれわれ。','記憶の解像度たっか。','ほぼログを生きてる。'],
+    8:['かなりわれわれ。','ちゃんと覚えてるやん。','8割われわれ。十分濃い。','だいぶ会話が染みついてる。','記憶、かなり生きてる。'],
+    7:['まあまあわれわれ。','いい線いってる。','7割。記憶の棚、わりと整理されてる。','ちゃんとわれわれ。','そこそこ強い。'],
+    6:['半分超えた。えらい。','記憶、まだある。','6割われわれ。','覚えてるとこは覚えてる。','ふつうに健闘。'],
+    5:['ちょうど半分。','五分五分われわれ。','記憶と勘が半々。','半分は確実に生きてる。','まあまあまあまあ。'],
+    4:['記憶、ちょい迷子。','4割。まだ帰ってこれる。','うっすらわれわれ。','ところどころ別世界線。','思い出ガチャ回しとく？'],
+    3:['記憶、どこ置いてきた。','3割われわれ。','ところどころ初見の顔してる。','ログに聞いた方が早そう。','記憶の再インストール待ち。'],
+    2:['だいぶ初対面。','2問は知ってた。えらい。','記憶が省エネモード。','われわれ、薄味。','思い出そうず案件。'],
+    1:['1問だけ魂が覚えてた。','ほぼ初対面。','その1問を大事にしよう。','記憶、一本だけ残ってる。','逆に1問当たったの強い。'],
+    0:['初対面？','全滅wwww','われわれとは。','記憶、きれいさっぱり。','今日から仲良くなろう。']
   };
-
-  function source(){return matched[mode]||[];}
-  function refill(){
-    deck=[...source()];
-    for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
-  }
-  function updateProgress(){
-    progressText.textContent=`${Math.min(n+1,GOAL)} / ${GOAL}`;
-    scoreEl.textContent=`正解 ${score}`;
-    progressBar.style.width=`${Math.min(n,GOAL)/GOAL*100}%`;
-  }
-  function drawScene(target,item){
-    target.replaceChildren();
-    (item?.lines||[]).forEach(x=>{const row=document.createElement('div');row.className='chat-line '+(x.who==='み'?'mine':'theirs');const w=document.createElement('span');w.className='who';w.textContent=x.who;const b=document.createElement('div');b.className='bubble';b.textContent=x.text;x.who==='み'?row.append(b,w):row.append(w,b);target.append(row)});
-  }
-  function pickComment(list){return list[Math.floor(Math.random()*list.length)];}
-  function resultComment(s){
-    if(s===10)return pickComment(RESULT_COMMENTS.perfect);
-    if(s>=8)return pickComment(RESULT_COMMENTS.great);
-    if(s>=5)return pickComment(RESULT_COMMENTS.good);
-    if(s>=2)return pickComment(RESULT_COMMENTS.low);
-    return pickComment(RESULT_COMMENTS.tiny);
-  }
-
-  function choose(){
-    if(n>=GOAL){showFinish();return;}
-    if(!deck.length)refill();
-    if(!deck.length){question.innerHTML='<div class="empty">周辺ログまで紐づいた問題がまだありません。</div>';choices.innerHTML='';return;}
-    current=deck.pop();answered=false;result.innerHTML='';finish.hidden=true;question.hidden=false;choices.hidden=false;updateProgress();
-    if(mode==='who'){
-      question.innerHTML=`<div class="quiz-question-label">この発言、どっち？</div><div class="quiz-question-text">「${esc(current.quote).replaceAll('\n','<br>')}」</div>`;
-      choices.innerHTML=['み','も'].map(x=>`<button class="press-btn quiz-choice" data-v="${x}">${x}</button>`).join('');
-    }else{
-      question.innerHTML=`<div class="quiz-prompt-text">${current.prompt_who}「${esc(current.prompt).replaceAll('\n','<br>')}」</div><div class="quiz-next-label">この次は？</div>`;
-      choices.innerHTML=current.options.map((x,i)=>`<button class="press-btn quiz-choice" data-v="${i}">${esc(x).replaceAll('\n','<br>')}</button>`).join('');
-    }
-    [...choices.querySelectorAll('button')].forEach(b=>b.onclick=()=>answer(b));
-  }
-
-  function answer(b){
-    if(answered)return;answered=true;
-    [...choices.querySelectorAll('button')].forEach(x=>x.disabled=true);
-    const ok=mode==='who'?b.dataset.v===current.answer:current.options[Number(b.dataset.v)]===current.answer;
-    if(ok){score++;b.classList.add('correct')}else{
-      b.classList.add('wrong');
-      [...choices.querySelectorAll('button')].forEach(x=>{const value=mode==='who'?x.dataset.v:current.options[Number(x.dataset.v)];if(value===current.answer)x.classList.add('correct')});
-    }
-    n++;progressBar.style.width=`${n/GOAL*100}%`;scoreEl.textContent=`正解 ${score}`;
-
-    const found=current._scene;
-    const mark=ok?'○':'×',markClass=ok?'ok':'ng',titleText=ok?'正解！':'不正解';
-    const answerText=ok?fmtDate(current.date):`正解は「${esc(current.answer)}」・${fmtDate(current.date)}`;
-    const contextControls=`<button class="press-btn" id="showContext">この前後の会話を見る</button><a class="press-btn" id="openDay" style="display:inline-flex;align-items:center;text-decoration:none" href="../on-this-day/?date=${encodeURIComponent(found.date)}&scene=${encodeURIComponent(found.id)}&around=1">あの日のわれわれで周辺を見る</a>`;
-    result.innerHTML=`<div class="quiz-result-card"><div class="quiz-result-main"><div class="quiz-mark ${markClass}">${mark}</div><div><div class="quiz-result-title">${titleText}</div><div class="quiz-result-answer">${answerText}</div></div></div><div class="quiz-result-actions">${contextControls}<button class="press-btn primary" id="nextNow">${n>=GOAL?'結果を見る':'次の問題へ'}</button></div><div class="quiz-context" id="contextBox" hidden><div class="chat-scene" id="contextScene"></div></div></div>`;
-    document.getElementById('nextNow').onclick=()=>n>=GOAL?showFinish():choose();
-    const show=document.getElementById('showContext');
-    show.onclick=()=>{const box=document.getElementById('contextBox');box.hidden=false;drawScene(document.getElementById('contextScene'),found);show.hidden=true;};
-    if(window.innerWidth<=580){requestAnimationFrame(()=>result.scrollIntoView({behavior:'smooth',block:'nearest'}));}
-  }
-
-  function showFinish(){
-    question.hidden=true;choices.hidden=true;result.innerHTML='';finish.hidden=false;
-    finishScore.textContent=`${score} / ${GOAL} 正解`;finishComment.textContent=resultComment(score);progressText.textContent=`${GOAL} / ${GOAL}`;progressBar.style.width='100%';
-    if(window.innerWidth<=580){requestAnimationFrame(()=>finish.scrollIntoView({behavior:'smooth',block:'center'}));}
-  }
-  function reset(nextMode=mode){
-    mode=nextMode;score=0;n=0;deck=[];refill();
-    whoB.classList.toggle('is-active',mode==='who');nextB.classList.toggle('is-active',mode==='next');choose();
-  }
+  function resultComment(s){const a=comments[s]||comments[0];return a[Math.floor(Math.random()*a.length)]}
+  function source(){return mode==='who'?d.who:d.next}
+  function refill(){deck=[...source()];for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]]}}
+  function updateProgress(){progressText.textContent=`${Math.min(n+1,GOAL)} / ${GOAL}`;scoreEl.textContent=`正解 ${score}`;progressBar.style.width=`${Math.min(n,GOAL)/GOAL*100}%`}
+  function drawScene(target,item){target.replaceChildren();(item?.lines||[]).forEach(x=>{const row=document.createElement('div');row.className='chat-line '+(x.who==='み'?'mine':'theirs');const w=document.createElement('span');w.className='who';w.textContent=x.who;const b=document.createElement('div');b.className='bubble';b.textContent=x.text;x.who==='み'?row.append(b,w):row.append(w,b);target.append(row)})}
+  function choose(){if(n>=GOAL){showFinish();return}if(!deck.length)refill();current=deck.pop();answered=false;result.innerHTML='';finish.hidden=true;question.hidden=false;choices.hidden=false;updateProgress();if(mode==='who'){question.innerHTML=`<div class="quiz-question-label">この発言、どっち？</div><div class="quiz-question-text">「${esc(current.quote).replaceAll('\n','<br>')}」</div>`;choices.innerHTML=['み','も'].map(x=>`<button class="press-btn quiz-choice" data-v="${x}">${x}</button>`).join('')}else{question.innerHTML=`<div class="quiz-prompt-text">${current.prompt_who}「${esc(current.prompt).replaceAll('\n','<br>')}」</div><div class="quiz-next-label">この次は？</div>`;choices.innerHTML=current.options.map((x,i)=>`<button class="press-btn quiz-choice" data-v="${i}">${esc(x).replaceAll('\n','<br>')}</button>`).join('')}[...choices.querySelectorAll('button')].forEach(b=>b.onclick=()=>answer(b));window.scrollTo({top:Math.max(0,question.getBoundingClientRect().top+window.scrollY-120),behavior:'smooth'})}
+  function answer(b){if(answered)return;answered=true;[...choices.querySelectorAll('button')].forEach(x=>x.disabled=true);const ok=mode==='who'?b.dataset.v===current.answer:current.options[Number(b.dataset.v)]===current.answer;if(ok){score++;b.classList.add('correct')}else{b.classList.add('wrong');[...choices.querySelectorAll('button')].forEach(x=>{const value=mode==='who'?x.dataset.v:current.options[Number(x.dataset.v)];if(value===current.answer)x.classList.add('correct')})}n++;progressBar.style.width=`${n/GOAL*100}%`;scoreEl.textContent=`正解 ${score}`;const found=WareraData.findSceneForQuiz(memories,current,quizScenePack);const mark=ok?'○':'×',markClass=ok?'ok':'ng',titleText=ok?'正解！':'不正解';const answerText=ok?fmtDate(current.date):`正解は「${esc(current.answer)}」・${fmtDate(current.date)}`;const contextControls=found?`<button class="press-btn" id="showContext">この前後の会話を見る</button><a class="press-btn" id="openDay" style="display:inline-flex;align-items:center;text-decoration:none" href="../on-this-day/?date=${encodeURIComponent(found.date)}&scene=${encodeURIComponent(found.id)}&source=quiz">あの日のわれわれで開く</a>`:'';result.innerHTML=`<div class="quiz-result-card"><div class="quiz-result-main"><div class="quiz-mark ${markClass}">${mark}</div><div><div class="quiz-result-title">${titleText}</div><div class="quiz-result-answer">${answerText}</div></div></div><div class="quiz-result-actions">${contextControls}<button class="press-btn primary" id="nextNow">${n>=GOAL?'結果を見る':'次の問題へ'}</button></div><div class="quiz-context" id="contextBox" hidden>${found?'<div class="chat-scene" id="contextScene"></div>':''}</div></div>`;document.getElementById('nextNow').onclick=()=>n>=GOAL?showFinish():choose();const show=document.getElementById('showContext');if(show&&found){show.onclick=()=>{const box=document.getElementById('contextBox');box.hidden=false;drawScene(document.getElementById('contextScene'),found);show.hidden=true;box.scrollIntoView({behavior:'smooth',block:'nearest'})}};requestAnimationFrame(()=>result.scrollIntoView({behavior:'smooth',block:'nearest'}))}
+  function showFinish(){question.hidden=true;choices.hidden=true;result.innerHTML='';finish.hidden=false;finishScore.textContent=`${score} / ${GOAL} 正解`;finishComment.textContent=resultComment(score);progressText.textContent=`${GOAL} / ${GOAL}`;progressBar.style.width='100%';finish.scrollIntoView({behavior:'smooth',block:'center'})}
+  function reset(nextMode=mode){mode=nextMode;score=0;n=0;deck=[];refill();whoB.classList.toggle('is-active',mode==='who');nextB.classList.toggle('is-active',mode==='next');choose()}
   whoB.onclick=()=>reset('who');nextB.onclick=()=>reset('next');restart.onclick=()=>reset(mode);reset('who');
 })();
 </script></body></html>
