@@ -16,7 +16,7 @@ function fmtMinutes(min){min=Math.round(Number(min)||0);const h=Math.floor(min/6
       .chat-line.self{justify-content:flex-end}.chat-line.other{justify-content:flex-start}
       .who.person-mi{background:#f8dce7}.bubble.person-mi{background:#fff0f5!important}
       .who.person-mo{background:#dceeff}.bubble.person-mo{background:#eef7ff!important}
-      .who{overflow:hidden}.who img{display:block;width:100%;height:100%;object-fit:cover}
+      .who{overflow:hidden}.who img{display:block;width:100%;height:100%;object-fit:cover;transform:scale(1.18);transform-origin:center center}
       .perspective-row{display:flex;justify-content:flex-end;margin:-8px 0 14px}
       .perspective-btn{border:0;background:none;color:#777;padding:4px 0;font:inherit;font-size:11px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
       .perspective-gate{position:fixed;inset:0;z-index:70;background:rgba(244,244,244,.92);display:grid;place-items:center;padding:24px}
