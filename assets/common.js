@@ -17,7 +17,7 @@ function fmtMinutes(min){min=Math.round(Number(min)||0);const h=Math.floor(min/6
       .app-title p{display:none!important}
       .app-title .icon{width:40px!important;height:40px!important;flex-basis:40px!important;font-size:19px!important}
       .app-title h1{font-size:clamp(23px,3vw,31px)!important;line-height:1.15}
-      .source-count{margin-left:auto;align-self:flex-start;padding-top:3px;color:#8a8a8a;font-size:10px;font-weight:700;line-height:1;letter-spacing:.02em;white-space:nowrap;font-variant-numeric:tabular-nums}
+      .source-count{margin-left:auto;align-self:flex-start;padding-top:4px;color:#8d8d8d;font-size:9px;font-weight:400;line-height:1;letter-spacing:.01em;white-space:nowrap;font-variant-numeric:tabular-nums}
       .conversation-card{border:1px solid #111;border-radius:10px;background:#fff;box-shadow:4px 4px 0 rgba(0,0,0,.45);padding:18px}
       @media(max-width:580px){
         .site-header__inner{height:46px!important}
@@ -27,7 +27,7 @@ function fmtMinutes(min){min=Math.round(Number(min)||0);const h=Math.floor(min/6
         .app-title{gap:9px!important;align-items:center!important}
         .app-title .icon{width:34px!important;height:34px!important;flex-basis:34px!important;font-size:16px!important}
         .app-title h1{font-size:21px!important;line-height:1.15!important}
-        .source-count{padding-top:2px;font-size:9px}
+        .source-count{padding-top:3px;font-size:8px;color:#999}
         .panel{padding:13px!important}
         .conversation-card{padding:13px;box-shadow:3px 3px 0 rgba(0,0,0,.42)}
         .press-btn,.filter{min-height:38px;height:auto!important;padding:8px 10px!important}
