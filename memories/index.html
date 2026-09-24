@@ -2,6 +2,8 @@
 (async()=>{
   wireLock('../');
   const memories=await WareraData.memories('../');
+  const readable=memories.filter(WareraData.readableScene);
+  const source=readable.length?readable:memories;
   const scene=document.getElementById('scene'),date=document.getElementById('date'),next=document.getElementById('next');
   const RK='warera_memory_recent';
   async function pick(){
@@ -9,8 +11,8 @@
     try{
       let recent=[];try{recent=JSON.parse(localStorage.getItem(RK)||'[]')}catch(e){}
       const recentSet=new Set(recent);
-      let pool=memories.filter(x=>!recentSet.has(String(x.id)));
-      if(!pool.length){recent=[];pool=memories}
+      let pool=source.filter(x=>!recentSet.has(String(x.id)));
+      if(!pool.length){recent=[];pool=source}
       const chosen=pool[Math.floor(Math.random()*pool.length)];
       if(!chosen)return;
       recent.push(String(chosen.id));localStorage.setItem(RK,JSON.stringify(recent.slice(-30)));
