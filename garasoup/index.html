@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="ja" class="notranslate" translate="no"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="google" content="notranslate"><meta name="robots" content="noindex,nofollow,noarchive"><title>ガラスープ｜我らのあそび場</title><link rel="stylesheet" href="../assets/site.css"></head><body>
 <header class="site-header"><div class="site-header__inner"><a class="brand" href="../">我らのあそび場</a><button class="lock-btn" data-lock>鍵をかける</button></div></header>
-<main class="shell app-shell"><div class="backline"><a href="../">← あそび場にもどる</a></div><section class="app-title"><div class="icon">🐔</div><div><h1>ガラスープ</h1><p>買い忘れ防止装置。</p></div></section><div style="height:24px"></div>
+<main class="shell app-shell"><div class="backline"><a href="../">← あそび場にもどる</a></div><section class="app-title"><div class="icon">🐔</div><div><h1>ガラスープ</h1><p>買い忘れ防止装置。</p></div><span class="source-count">返答40種</span></section><div style="height:24px"></div>
 <section class="panel garasoup-card"><div class="garasoup-question">ガラスープ、今日どう？</div><p class="subtle" style="font-size:14px;margin:10px 0 0">鶏のやつ。粉のやつ。</p><div class="actions" style="justify-content:center;margin-top:22px"><button class="press-btn primary" id="yes">買えた！</button><button class="press-btn" id="no">まだだった</button></div><div class="garasoup-result" id="result">どうでした</div></section>
 </main><script src="../assets/auth.js"></script><script src="../assets/common.js"></script><script>
 (async()=>{
@@ -8,76 +8,14 @@
   wireLock('../');
 
   const good = [
-    'ﾊｯ\n鶏ガラスープある',
-    '買えただーん！🐔',
-    'ガラスープ確保ぉー！',
-    'はーーーん？\nちゃんと買えてるやん',
-    '丸鶏を連れてこなくて済んだ',
-    '養鶏場ルート回避。',
-    '鶏、粉になって待ってた',
-    'メモらず行っても勝った。つよ',
-    'これで鶏ガラぐつぐつ煮込まんでええ',
-    'そいつぁいいことおもいついたなぁ！\n普通に買っただけだけど！w',
-    'おっけい！中華できるど',
-    'ガラスープ、きたくー',
-    '気長ｧじゃなく今日手に入った',
-    'コケーッ🐓\n（歓喜）',
-    'ごっつぁん！ガラスープ',
-    'やったーーーん！\n今度こそある！',
-    '鶏ガラスープない\n……じゃない！！！',
-    '勝訴。\n鶏ガラスープ購入。',
-    'よーーーし\n粉の鶏、確保',
-    '今日は忘れんかったwwww'
+    'ﾊｯ\n鶏ガラスープある','買えただーん！🐔','ガラスープ確保ぉー！','はーーーん？\nちゃんと買えてるやん','丸鶏を連れてこなくて済んだ','養鶏場ルート回避。','鶏、粉になって待ってた','メモらず行っても勝った。つよ','これで鶏ガラぐつぐつ煮込まんでええ','そいつぁいいことおもいついたなぁ！\n普通に買っただけだけど！w','おっけい！中華できるど','ガラスープ、きたくー','気長ｧじゃなく今日手に入った','コケーッ🐓\n（歓喜）','ごっつぁん！ガラスープ','やったーーーん！\n今度こそある！','鶏ガラスープない\n……じゃない！！！','勝訴。\n鶏ガラスープ購入。','よーーーし\n粉の鶏、確保','今日は忘れんかったwwww'
   ];
-
   const nope = [
-    'ﾊｯ\n鶏ガラスープない',
-    'はーーーん？',
-    '聞いて。\n鶏ガラスープ忘れた（メモらず行った',
-    '待ってな、丸鶏でよければ\n鮮度の良いの連れてくで',
-    '養鶏場？',
-    '呼んだ？\nコケーッ🐓',
-    'ガラスープないなら\n鶏ガラぐつぐつ煮込んだらええねん',
-    'そいつぁいいことおもいついたなぁ！\nってなるかい！w',
-    '半月以上待てってかwwww',
-    '気長ｧ',
-    'まだだったーん\nのちほ思い出そ',
-    'また忘れたwwww\nでも押しに来たのでヨシ',
-    '鶏ガラスープ、今日も不在',
-    '次のスーパーで\nﾊｯ ってなれ',
-    'ガラスープ「また来いよ」',
-    'まだいない。\n粉の鶏。',
-    '鶏ガラ仕入れてくるかー！\n……ってなるかい！w',
-    'いったん帰ろ。\nそして次はメモろw',
-    '本日の鶏ガラスープ：未実装',
-    'よし。\n次回リベンジのすけ'
+    'ﾊｯ\n鶏ガラスープない','はーーーん？','聞いて。\n鶏ガラスープ忘れた（メモらず行った','待ってな、丸鶏でよければ\n鮮度の良いの連れてくで','養鶏場？','呼んだ？\nコケーッ🐓','ガラスープないなら\n鶏ガラぐつぐつ煮込んだらええねん','そいつぁいいことおもいついたなぁ！\nってなるかい！w','半月以上待てってかwwww','気長ｧ','まだだったーん\nのちほ思い出そ','また忘れたwwww\nでも押しに来たのでヨシ','鶏ガラスープ、今日も不在','次のスーパーで\nﾊｯ ってなれ','ガラスープ「また来いよ」','まだいない。\n粉の鶏。','鶏ガラ仕入れてくるかー！\n……ってなるかい！w','いったん帰ろ。\nそして次はメモろw','本日の鶏ガラスープ：未実装','よし。\n次回リベンジのすけ'
   ];
-
-  const box = document.getElementById('result');
-  let lastGood = -1;
-  let lastNope = -1;
-
-  function pick(list, last){
-    if(list.length <= 1) return [list[0], 0];
-
-    let i;
-    do{
-      i = Math.floor(Math.random() * list.length);
-    }while(i === last);
-
-    return [list[i], i];
-  }
-
-  document.getElementById('yes').onclick = () => {
-    const [text, index] = pick(good, lastGood);
-    lastGood = index;
-    box.textContent = text;
-  };
-
-  document.getElementById('no').onclick = () => {
-    const [text, index] = pick(nope, lastNope);
-    lastNope = index;
-    box.textContent = text;
-  };
+  const box=document.getElementById('result');let lastGood=-1,lastNope=-1;
+  function pick(list,last){if(list.length<=1)return[list[0],0];let i;do{i=Math.floor(Math.random()*list.length)}while(i===last);return[list[i],i]}
+  document.getElementById('yes').onclick=()=>{const[text,index]=pick(good,lastGood);lastGood=index;box.textContent=text};
+  document.getElementById('no').onclick=()=>{const[text,index]=pick(nope,lastNope);lastNope=index;box.textContent=text};
 })();
 </script></body></html>
