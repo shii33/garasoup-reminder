@@ -5,6 +5,8 @@ function fmtMinutes(min){min=Math.round(Number(min)||0);const h=Math.floor(min/6
 
 (()=>{
   const KEY='warera_chat_perspective';
+  const COMMON_SRC=document.currentScript?.src||new URL('../assets/common.js',location.href).href;
+  const AVATAR_BASE=new URL('avatars/',COMMON_SRC);
   const isChatPage=()=>!!document.querySelector('.conversation-shell')||/\/quiz\/?$/.test(location.pathname);
   function saved(){try{const v=localStorage.getItem(KEY);return v==='み'||v==='も'?v:null}catch(e){return null}}
   function current(){return saved()||'み'}
@@ -14,6 +16,7 @@ function fmtMinutes(min){min=Math.round(Number(min)||0);const h=Math.floor(min/6
       .chat-line.self{justify-content:flex-end}.chat-line.other{justify-content:flex-start}
       .who.person-mi{background:#f8dce7}.bubble.person-mi{background:#fff0f5!important}
       .who.person-mo{background:#dceeff}.bubble.person-mo{background:#eef7ff!important}
+      .who{overflow:hidden}.who img{display:block;width:100%;height:100%;object-fit:cover}
       .perspective-row{display:flex;justify-content:flex-end;margin:-8px 0 14px}
       .perspective-btn{border:0;background:none;color:#777;padding:4px 0;font:inherit;font-size:11px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
       .perspective-gate{position:fixed;inset:0;z-index:70;background:rgba(244,244,244,.92);display:grid;place-items:center;padding:24px}
@@ -28,11 +31,13 @@ function fmtMinutes(min){min=Math.round(Number(min)||0);const h=Math.floor(min/6
     const me=current();
     root.querySelectorAll?.('.chat-line').forEach(row=>{
       const badge=row.querySelector('.who'),bubble=row.querySelector('.bubble');if(!badge||!bubble)return;
-      const who=badge.textContent.trim();if(who!=='み'&&who!=='も')return;
+      const who=badge.dataset.who||badge.textContent.trim();if(who!=='み'&&who!=='も')return;
+      badge.dataset.who=who;
       const self=who===me;
       row.classList.toggle('mine',self);row.classList.toggle('self',self);row.classList.toggle('other',!self);
       badge.classList.toggle('person-mi',who==='み');badge.classList.toggle('person-mo',who==='も');
       bubble.classList.toggle('person-mi',who==='み');bubble.classList.toggle('person-mo',who==='も');
+      if(!badge.querySelector('img')){const img=document.createElement('img');img.src=new URL(who==='み'?'mi.jpg':'mo.jpg',AVATAR_BASE).href;img.alt=who;badge.replaceChildren(img)}
       if(self)row.append(bubble,badge);else row.append(badge,bubble);
     });
   }
