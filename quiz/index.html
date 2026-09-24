@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="ja" class="notranslate" translate="no"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="google" content="notranslate"><meta name="robots" content="noindex,nofollow,noarchive"><title>われわれ検定｜我らのあそび場</title><link rel="stylesheet" href="../assets/site.css"><style>.quiz-question-label{color:#666;font-size:13px}.quiz-question-text{font-size:23px;font-weight:800;line-height:1.7;margin-top:8px}.quiz-prompt-text{font-size:21px;font-weight:800;line-height:1.65;color:#111}.quiz-next-label{font-size:13px;font-weight:700;color:#666;margin-top:10px}.quiz-choice{width:100%;height:auto!important;min-height:50px;padding:12px 14px!important;text-align:left;font-size:15px;line-height:1.55;white-space:normal;overflow-wrap:anywhere;word-break:break-word}.quiz-result-card{border:1px solid #111;border-radius:10px;padding:16px;background:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.35)}.quiz-result-main{display:flex;gap:12px;align-items:center}.quiz-mark{width:48px;height:48px;display:grid;place-items:center;font-size:42px;font-weight:900;line-height:1}.quiz-mark.ok{color:#d34848}.quiz-mark.ng{color:#3276c8}.quiz-result-title{font-size:22px;font-weight:800}.quiz-result-answer{margin-top:4px;font-size:14px;line-height:1.6}.quiz-context{margin-top:14px;padding-top:14px;border-top:1px solid #ddd}.quiz-context[hidden]{display:none}.quiz-context .chat-scene{margin-bottom:12px}.quiz-result-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.quiz-result-actions .press-btn{height:auto;min-height:40px;padding:9px 12px;white-space:normal}.finish-comment{font-size:20px;font-weight:800;margin:7px 0 16px}.finish-score-big{font-size:32px;font-weight:800}@media(max-width:580px){input,textarea,select{font-size:16px!important}.quiz-question-text{font-size:22px}.quiz-prompt-text{font-size:20px}.quiz-choice{font-size:16px}}</style></head><body><header class="site-header"><div class="site-header__inner"><a class="brand" href="../">我らのあそび場</a><button class="lock-btn" data-lock>鍵をかける</button></div></header><main class="shell app-shell"><div class="backline"><a href="../">← あそび場にもどる</a></div><section class="app-title"><div class="icon">❓</div><div><h1>われわれ検定</h1><p>10問で、われわれ力を測る。</p></div></section><div style="height:24px"></div><section class="panel"><div class="quiz-modes"><div class="quiz-modes-label">問題タイプを選ぶ</div><div class="quiz-tabs"><button class="filter quiz-tab is-active" id="modeWho"><b>発言者あて</b><span>「これ言ったのどっち？」</span></button><button class="filter quiz-tab" id="modeNext"><b>続きあて</b><span>「この次、なんて返した？」</span></button></div></div><div class="progress-wrap"><div class="progress-meta"><span id="progressText">1 / 10</span><span id="score">正解 0</span></div><div class="progress-track"><i id="progressBar"></i></div></div><div id="question" style="margin-top:22px"></div><div id="choices" style="margin-top:14px"></div><div id="result" style="min-height:44px;margin-top:14px"></div><div id="finish" hidden style="margin-top:18px"><div class="finish-score-big" id="finishScore"></div><div class="finish-comment" id="finishComment"></div><button class="press-btn primary" id="restart">もう10問</button></div></section></main><script src="../assets/auth.js"></script><script src="../assets/common.js"></script><script src="../assets/data.js"></script><script>
+<!DOCTYPE html><html lang="ja" class="notranslate" translate="no"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="google" content="notranslate"><meta name="robots" content="noindex,nofollow,noarchive"><title>われわれ検定｜我らのあそび場</title><link rel="stylesheet" href="../assets/site.css"><style>.quiz-question-label{color:#666;font-size:13px}.quiz-question-text{font-size:23px;font-weight:800;line-height:1.7;margin-top:8px}.quiz-prompt-text{font-size:21px;font-weight:800;line-height:1.65;color:#111}.quiz-next-label{font-size:13px;font-weight:700;color:#666;margin-top:10px}.quiz-choice{width:100%;height:auto!important;min-height:50px;padding:12px 14px!important;text-align:left;font-size:15px;line-height:1.55;white-space:normal;overflow-wrap:anywhere;word-break:break-word}.quiz-result-card{border:1px solid #111;border-radius:10px;padding:16px;background:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.35)}.quiz-result-main{display:flex;gap:12px;align-items:center}.quiz-mark{width:48px;height:48px;display:grid;place-items:center;font-size:42px;font-weight:900;line-height:1}.quiz-mark.ok{color:#d34848}.quiz-mark.ng{color:#3276c8}.quiz-result-title{font-size:22px;font-weight:800}.quiz-result-answer{margin-top:4px;font-size:14px;line-height:1.6}.quiz-context{margin-top:14px;padding-top:14px;border-top:1px solid #ddd}.quiz-context[hidden]{display:none}.quiz-context .chat-scene{margin-bottom:12px}.quiz-result-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.quiz-result-actions .press-btn{height:auto;min-height:40px;padding:9px 12px;white-space:normal}.finish-comment{font-size:20px;font-weight:800;margin:7px 0 16px}.finish-score-big{font-size:32px;font-weight:800}@media(max-width:580px){input,textarea,select{font-size:16px!important}.quiz-tabs{grid-template-columns:1fr 1fr!important;gap:7px}.quiz-tab{min-height:52px!important;padding:8px 9px!important}.quiz-tab b{font-size:12px}.quiz-tab span{font-size:9px}.quiz-modes{margin-bottom:12px}.progress-wrap{margin-top:10px}.quiz-question-text{font-size:22px}.quiz-prompt-text{font-size:20px}.quiz-choice{font-size:16px}.quiz-result-card{padding:14px}.quiz-result-actions{gap:7px}.quiz-result-actions .press-btn{flex:1 1 140px}.quiz-result-actions .primary{order:-1;flex-basis:100%}}</style></head><body><header class="site-header"><div class="site-header__inner"><a class="brand" href="../">我らのあそび場</a><button class="lock-btn" data-lock>鍵をかける</button></div></header><main class="shell app-shell"><div class="backline"><a href="../">← あそび場にもどる</a></div><section class="app-title"><div class="icon">❓</div><div><h1>われわれ検定</h1><p>10問で、われわれ力を測る。</p></div></section><div style="height:24px"></div><section class="panel"><div class="quiz-modes"><div class="quiz-modes-label">問題タイプを選ぶ</div><div class="quiz-tabs"><button class="filter quiz-tab is-active" id="modeWho"><b>発言者あて</b><span>「これ言ったのどっち？」</span></button><button class="filter quiz-tab" id="modeNext"><b>続きあて</b><span>「この次、なんて返した？」</span></button></div></div><div class="progress-wrap"><div class="progress-meta"><span id="progressText">1 / 10</span><span id="score">正解 0</span></div><div class="progress-track"><i id="progressBar"></i></div></div><div id="question" style="margin-top:22px"></div><div id="choices" style="margin-top:14px"></div><div id="result" style="min-height:44px;margin-top:14px"></div><div id="finish" hidden style="margin-top:18px"><div class="finish-score-big" id="finishScore"></div><div class="finish-comment" id="finishComment"></div><button class="press-btn primary" id="restart">もう10問</button></div></section></main><script src="../assets/auth.js"></script><script src="../assets/common.js"></script><script src="../assets/data.js"></script><script>
 (async()=>{
   wireLock('../');
 
@@ -25,6 +25,14 @@
   let answered = false;
   let deck = [];
 
+  const RESULT_COMMENTS={
+    perfect:['本人か？','10問とも分かるの、もうログ側の人。','われわれ検定、閉幕。知りすぎ。','全問正解。こわ。','記憶力が当事者。'],
+    great:['かなりわれわれ','だいぶ会話が染み込んでる。','そのへんのログなら任せろ状態。','惜しい。ほぼ本人。','ちゃんとわれわれしてる。'],
+    good:['まあまあわれわれ','記憶、必要なとこは残ってる。','半分以上いけてるのでヨシ。','ところどころ鮮明。ところどころ霧。','思い出ガチャの摂取量が効いてる。'],
+    low:['記憶、どこ置いてきた','知ってる。たぶん知ってる。たぶん。','ログを見たら「あーーー！」ってなるやつ。','脳内キャッシュが消えてる。','雰囲気でわれわれしている。'],
+    tiny:['初対面？','はじめまして、われわれです。','ログ、全部新鮮。','逆に毎回楽しめて得。','記憶よりライブ感で生きてる。']
+  };
+
   function source(){return mode === 'who' ? d.who : d.next;}
   function refill(){
     deck=[...source()];
@@ -39,12 +47,13 @@
     target.replaceChildren();
     (item?.lines||[]).forEach(x=>{const row=document.createElement('div');row.className='chat-line '+(x.who==='み'?'mine':'theirs');const w=document.createElement('span');w.className='who';w.textContent=x.who;const b=document.createElement('div');b.className='bubble';b.textContent=x.text;x.who==='み'?row.append(b,w):row.append(w,b);target.append(row)});
   }
+  function pickComment(list){return list[Math.floor(Math.random()*list.length)];}
   function resultComment(s){
-    if(s===10)return '本人か？';
-    if(s>=8)return 'かなりわれわれ';
-    if(s>=5)return 'まあまあわれわれ';
-    if(s>=2)return '記憶、どこ置いてきた';
-    return '初対面？';
+    if(s===10)return pickComment(RESULT_COMMENTS.perfect);
+    if(s>=8)return pickComment(RESULT_COMMENTS.great);
+    if(s>=5)return pickComment(RESULT_COMMENTS.good);
+    if(s>=2)return pickComment(RESULT_COMMENTS.low);
+    return pickComment(RESULT_COMMENTS.tiny);
   }
 
   function choose(){
@@ -81,11 +90,13 @@
     document.getElementById('nextNow').onclick=()=>n>=GOAL?showFinish():choose();
     const show=document.getElementById('showContext');
     if(show&&found){show.onclick=()=>{const box=document.getElementById('contextBox');box.hidden=false;drawScene(document.getElementById('contextScene'),found);show.hidden=true;}};
+    if(window.innerWidth<=580){requestAnimationFrame(()=>result.scrollIntoView({behavior:'smooth',block:'nearest'}));}
   }
 
   function showFinish(){
     question.hidden=true;choices.hidden=true;result.innerHTML='';finish.hidden=false;
     finishScore.textContent=`${score} / ${GOAL} 正解`;finishComment.textContent=resultComment(score);progressText.textContent=`${GOAL} / ${GOAL}`;progressBar.style.width='100%';
+    if(window.innerWidth<=580){requestAnimationFrame(()=>finish.scrollIntoView({behavior:'smooth',block:'center'}));}
   }
   function reset(nextMode=mode){
     mode=nextMode;score=0;n=0;deck=[];refill();
