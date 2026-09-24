@@ -4,6 +4,13 @@
 
   const [core,memories] = await Promise.all([WareraData.core('../'),WareraData.memories('../')]);
   const d = core.quiz;
+  const matched={who:[],next:[]};
+  for(const key of ['who','next']){
+    for(const item of (d[key]||[])){
+      const scene=WareraData.findSceneForQuiz(memories,item);
+      if(scene) matched[key].push({...item,_scene:scene,scene_id:scene.id});
+    }
+  }
   const whoB = document.getElementById('modeWho');
   const nextB = document.getElementById('modeNext');
   const question = document.getElementById('question');
@@ -33,7 +40,7 @@
     tiny:['初対面？','はじめまして、われわれです。','ログ、全部新鮮。','逆に毎回楽しめて得。','記憶よりライブ感で生きてる。']
   };
 
-  function source(){return mode === 'who' ? d.who : d.next;}
+  function source(){return matched[mode]||[];}
   function refill(){
     deck=[...source()];
     for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
@@ -59,6 +66,7 @@
   function choose(){
     if(n>=GOAL){showFinish();return;}
     if(!deck.length)refill();
+    if(!deck.length){question.innerHTML='<div class="empty">周辺ログまで紐づいた問題がまだありません。</div>';choices.innerHTML='';return;}
     current=deck.pop();answered=false;result.innerHTML='';finish.hidden=true;question.hidden=false;choices.hidden=false;updateProgress();
     if(mode==='who'){
       question.innerHTML=`<div class="quiz-question-label">この発言、どっち？</div><div class="quiz-question-text">「${esc(current.quote).replaceAll('\n','<br>')}」</div>`;
@@ -80,16 +88,14 @@
     }
     n++;progressBar.style.width=`${n/GOAL*100}%`;scoreEl.textContent=`正解 ${score}`;
 
-    const found=WareraData.findSceneForQuiz(memories,current);
+    const found=current._scene;
     const mark=ok?'○':'×',markClass=ok?'ok':'ng',titleText=ok?'正解！':'不正解';
     const answerText=ok?fmtDate(current.date):`正解は「${esc(current.answer)}」・${fmtDate(current.date)}`;
-    const contextControls=found
-      ? `<button class="press-btn" id="showContext">この前後の会話を見る</button><a class="press-btn" id="openDay" style="display:inline-flex;align-items:center;text-decoration:none" href="../on-this-day/?date=${encodeURIComponent(found.date)}&scene=${encodeURIComponent(found.id)}&around=1">あの日のわれわれで周辺を見る</a>`
-      : '';
-    result.innerHTML=`<div class="quiz-result-card"><div class="quiz-result-main"><div class="quiz-mark ${markClass}">${mark}</div><div><div class="quiz-result-title">${titleText}</div><div class="quiz-result-answer">${answerText}</div></div></div><div class="quiz-result-actions">${contextControls}<button class="press-btn primary" id="nextNow">${n>=GOAL?'結果を見る':'次の問題へ'}</button></div><div class="quiz-context" id="contextBox" hidden>${found?'<div class="chat-scene" id="contextScene"></div>':''}</div></div>`;
+    const contextControls=`<button class="press-btn" id="showContext">この前後の会話を見る</button><a class="press-btn" id="openDay" style="display:inline-flex;align-items:center;text-decoration:none" href="../on-this-day/?date=${encodeURIComponent(found.date)}&scene=${encodeURIComponent(found.id)}&around=1">あの日のわれわれで周辺を見る</a>`;
+    result.innerHTML=`<div class="quiz-result-card"><div class="quiz-result-main"><div class="quiz-mark ${markClass}">${mark}</div><div><div class="quiz-result-title">${titleText}</div><div class="quiz-result-answer">${answerText}</div></div></div><div class="quiz-result-actions">${contextControls}<button class="press-btn primary" id="nextNow">${n>=GOAL?'結果を見る':'次の問題へ'}</button></div><div class="quiz-context" id="contextBox" hidden><div class="chat-scene" id="contextScene"></div></div></div>`;
     document.getElementById('nextNow').onclick=()=>n>=GOAL?showFinish():choose();
     const show=document.getElementById('showContext');
-    if(show&&found){show.onclick=()=>{const box=document.getElementById('contextBox');box.hidden=false;drawScene(document.getElementById('contextScene'),found);show.hidden=true;}};
+    show.onclick=()=>{const box=document.getElementById('contextBox');box.hidden=false;drawScene(document.getElementById('contextScene'),found);show.hidden=true;};
     if(window.innerWidth<=580){requestAnimationFrame(()=>result.scrollIntoView({behavior:'smooth',block:'nearest'}));}
   }
 
