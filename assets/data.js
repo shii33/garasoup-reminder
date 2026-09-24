@@ -53,7 +53,8 @@
   function findSceneForQuiz(rows,item,contextPack=null){
     if(!item) return null;
     const contextRows=contextPack?.scenes||[];
-    const mappedId=contextPack?.map?.[quizKey(item)];
+    const key=quizKey(item);
+    const mappedId=contextPack?.map?.[key]??contextPack?.map?.[key+'|'];
     if(mappedId!=null){
       const mapped=contextRows.find(x=>String(x.id)===String(mappedId));
       if(mapped) return mapped;
