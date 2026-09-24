@@ -43,7 +43,7 @@ jobs:
           assert 'WareraData.quizScenePack' in q
           assert 'quiz-scenes.enc' in d
           assert 'source=quiz' in q
-          assert "source==='quiz'" in day or 'source === \'quiz\'' in day
+          assert "src==='quiz'" in day
           PY
       - name: Commit final layout
         shell: bash
