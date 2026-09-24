@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="ja" class="notranslate" translate="no"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="google" content="notranslate"><meta name="robots" content="noindex,nofollow,noarchive"><title>われわれ検定｜我らのあそび場</title><link rel="stylesheet" href="../assets/site.css"><style>.quiz-question-label{color:#666;font-size:13px}.quiz-question-text{font-size:23px;font-weight:800;line-height:1.7;margin-top:8px}.quiz-next-label{font-size:22px;font-weight:800;margin-top:12px}.quiz-choice{font-size:15px;line-height:1.55}.quiz-result-card{border:1px solid #111;border-radius:10px;padding:16px;background:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.35)}.quiz-result-main{display:flex;gap:12px;align-items:center}.quiz-mark{width:48px;height:48px;display:grid;place-items:center;font-size:42px;font-weight:900;line-height:1}.quiz-mark.ok{color:#d34848}.quiz-mark.ng{color:#3276c8}.quiz-result-title{font-size:22px;font-weight:800}.quiz-result-answer{margin-top:4px;font-size:14px;line-height:1.6}.quiz-context{margin-top:14px;padding-top:14px;border-top:1px solid #ddd}.quiz-context[hidden]{display:none}.quiz-context .chat-scene{margin-bottom:12px}.quiz-result-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.quiz-result-actions .press-btn{height:38px}.finish-comment{font-size:20px;font-weight:800;margin:7px 0 16px}.finish-score-big{font-size:32px;font-weight:800}@media(max-width:580px){input,textarea,select{font-size:16px!important}.quiz-question-text{font-size:22px}.quiz-choice{font-size:16px}}</style></head><body><header class="site-header"><div class="site-header__inner"><a class="brand" href="../">我らのあそび場</a><button class="lock-btn" data-lock>鍵をかける</button></div></header><main class="shell app-shell"><div class="backline"><a href="../">← あそび場にもどる</a></div><section class="app-title"><div class="icon">❓</div><div><h1>われわれ検定</h1><p>10問で、われわれ力を測る。</p></div></section><div style="height:24px"></div><section class="panel"><div class="quiz-modes"><div class="quiz-modes-label">問題タイプを選ぶ</div><div class="quiz-tabs"><button class="filter quiz-tab is-active" id="modeWho"><b>発言者あて</b><span>「これ言ったのどっち？」</span></button><button class="filter quiz-tab" id="modeNext"><b>続きあて</b><span>「この次、なんて返した？」</span></button></div></div><div class="progress-wrap"><div class="progress-meta"><span id="progressText">1 / 10</span><span id="score">正解 0</span></div><div class="progress-track"><i id="progressBar"></i></div></div><div id="question" style="margin-top:22px"></div><div id="choices" style="margin-top:14px"></div><div id="result" style="min-height:44px;margin-top:14px"></div><div id="finish" hidden style="margin-top:18px"><div class="finish-score-big" id="finishScore"></div><div class="finish-comment" id="finishComment"></div><button class="press-btn primary" id="restart">もう10問</button></div></section></main><script src="../assets/auth.js"></script><script src="../assets/common.js"></script><script src="../assets/data.js"></script><script>
+<!DOCTYPE html><html lang="ja" class="notranslate" translate="no"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="google" content="notranslate"><meta name="robots" content="noindex,nofollow,noarchive"><title>われわれ検定｜我らのあそび場</title><link rel="stylesheet" href="../assets/site.css"><style>.quiz-question-label{color:#666;font-size:13px}.quiz-question-text{font-size:23px;font-weight:800;line-height:1.7;margin-top:8px}.quiz-next-label{font-size:22px;font-weight:800;margin-top:12px}.quiz-choice{font-size:15px;line-height:1.55}.quiz-result-card{border:1px solid #111;border-radius:10px;padding:16px;background:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.35)}.quiz-result-main{display:flex;gap:12px;align-items:center}.quiz-mark{width:48px;height:48px;display:grid;place-items:center;font-size:42px;font-weight:900;line-height:1}.quiz-mark.ok{color:#d34848}.quiz-mark.ng{color:#3276c8}.quiz-result-title{font-size:22px;font-weight:800}.quiz-result-answer{margin-top:4px;font-size:14px;line-height:1.6}.quiz-context{margin-top:14px;padding-top:14px;border-top:1px solid #ddd}.quiz-context[hidden]{display:none}.quiz-context .chat-scene{margin-bottom:12px}.quiz-result-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.quiz-result-actions .press-btn{height:40px}.finish-comment{font-size:20px;font-weight:800;margin:7px 0 16px}.finish-score-big{font-size:32px;font-weight:800}@media(max-width:580px){input,textarea,select{font-size:16px!important}.quiz-question-text{font-size:22px}.quiz-choice{font-size:16px}}</style></head><body><header class="site-header"><div class="site-header__inner"><a class="brand" href="../">我らのあそび場</a><button class="lock-btn" data-lock>鍵をかける</button></div></header><main class="shell app-shell"><div class="backline"><a href="../">← あそび場にもどる</a></div><section class="app-title"><div class="icon">❓</div><div><h1>われわれ検定</h1><p>10問で、われわれ力を測る。</p></div></section><div style="height:24px"></div><section class="panel"><div class="quiz-modes"><div class="quiz-modes-label">問題タイプを選ぶ</div><div class="quiz-tabs"><button class="filter quiz-tab is-active" id="modeWho"><b>発言者あて</b><span>「これ言ったのどっち？」</span></button><button class="filter quiz-tab" id="modeNext"><b>続きあて</b><span>「この次、なんて返した？」</span></button></div></div><div class="progress-wrap"><div class="progress-meta"><span id="progressText">1 / 10</span><span id="score">正解 0</span></div><div class="progress-track"><i id="progressBar"></i></div></div><div id="question" style="margin-top:22px"></div><div id="choices" style="margin-top:14px"></div><div id="result" style="min-height:44px;margin-top:14px"></div><div id="finish" hidden style="margin-top:18px"><div class="finish-score-big" id="finishScore"></div><div class="finish-comment" id="finishComment"></div><button class="press-btn primary" id="restart">もう10問</button></div></section></main><script src="../assets/auth.js"></script><script src="../assets/common.js"></script><script src="../assets/data.js"></script><script>
 (async()=>{
   wireLock('../');
 
@@ -18,15 +18,12 @@
   const restart = document.getElementById('restart');
 
   const GOAL = 10;
-  const ADVANCE_MS = 1800;
-
   let mode = 'who';
   let score = 0;
   let n = 0;
   let current = null;
   let answered = false;
   let deck = [];
-  let advanceTimer = null;
 
   function source(){return mode === 'who' ? d.who : d.next;}
   function refill(){
@@ -51,7 +48,6 @@
   }
 
   function choose(){
-    clearTimeout(advanceTimer);
     if(n>=GOAL){showFinish();return;}
     if(!deck.length)refill();
     current=deck.pop();answered=false;result.innerHTML='';finish.hidden=true;question.hidden=false;choices.hidden=false;updateProgress();
@@ -78,19 +74,21 @@
     const found=WareraData.findSceneForQuiz(memories,current);
     const mark=ok?'○':'×',markClass=ok?'ok':'ng',titleText=ok?'正解！':'不正解';
     const answerText=ok?fmtDate(current.date):`正解は「${esc(current.answer)}」・${fmtDate(current.date)}`;
-    result.innerHTML=`<div class="quiz-result-card"><div class="quiz-result-main"><div class="quiz-mark ${markClass}">${mark}</div><div><div class="quiz-result-title">${titleText}</div><div class="quiz-result-answer">${answerText}</div></div></div><div class="quiz-result-actions">${found?'<button class="press-btn" id="showContext">この前後を見る</button>':''}<button class="press-btn" id="nextNow">次へ</button></div><div class="quiz-context" id="contextBox" hidden>${found?'<div class="chat-scene" id="contextScene"></div><a class="press-btn" id="openDay" style="display:inline-flex;align-items:center;text-decoration:none" href="../on-this-day/?date='+encodeURIComponent(found.date)+'&scene='+encodeURIComponent(found.id)+'">あの日のわれわれで開く</a>':''}</div></div>`;
-    const nextNow=document.getElementById('nextNow');nextNow.onclick=()=>{clearTimeout(advanceTimer);n>=GOAL?showFinish():choose()};
+    const contextControls=found
+      ? `<button class="press-btn" id="showContext">この前後の会話を見る</button><a class="press-btn" id="openDay" style="display:inline-flex;align-items:center;text-decoration:none" href="../on-this-day/?date=${encodeURIComponent(found.date)}&scene=${encodeURIComponent(found.id)}&around=1">あの日のわれわれで周辺を見る</a>`
+      : '';
+    result.innerHTML=`<div class="quiz-result-card"><div class="quiz-result-main"><div class="quiz-mark ${markClass}">${mark}</div><div><div class="quiz-result-title">${titleText}</div><div class="quiz-result-answer">${answerText}</div></div></div><div class="quiz-result-actions">${contextControls}<button class="press-btn primary" id="nextNow">${n>=GOAL?'結果を見る':'次の問題へ'}</button></div><div class="quiz-context" id="contextBox" hidden>${found?'<div class="chat-scene" id="contextScene"></div>':''}</div></div>`;
+    document.getElementById('nextNow').onclick=()=>n>=GOAL?showFinish():choose();
     const show=document.getElementById('showContext');
-    if(show&&found){show.onclick=()=>{clearTimeout(advanceTimer);const box=document.getElementById('contextBox');box.hidden=false;drawScene(document.getElementById('contextScene'),found);show.hidden=true;}};
-    advanceTimer=setTimeout(()=>{if(n>=GOAL)showFinish();else choose();},ADVANCE_MS);
+    if(show&&found){show.onclick=()=>{const box=document.getElementById('contextBox');box.hidden=false;drawScene(document.getElementById('contextScene'),found);show.hidden=true;}};
   }
 
   function showFinish(){
-    clearTimeout(advanceTimer);question.hidden=true;choices.hidden=true;result.innerHTML='';finish.hidden=false;
+    question.hidden=true;choices.hidden=true;result.innerHTML='';finish.hidden=false;
     finishScore.textContent=`${score} / ${GOAL} 正解`;finishComment.textContent=resultComment(score);progressText.textContent=`${GOAL} / ${GOAL}`;progressBar.style.width='100%';
   }
   function reset(nextMode=mode){
-    clearTimeout(advanceTimer);mode=nextMode;score=0;n=0;deck=[];refill();
+    mode=nextMode;score=0;n=0;deck=[];refill();
     whoB.classList.toggle('is-active',mode==='who');nextB.classList.toggle('is-active',mode==='next');choose();
   }
   whoB.onclick=()=>reset('who');nextB.onclick=()=>reset('next');restart.onclick=()=>reset(mode);reset('who');
