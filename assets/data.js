@@ -41,7 +41,7 @@
 (()=>{
   if(!/\/grow\/?$/.test(location.pathname))return;
   const s=document.createElement('script');
-  s.src='./ux-v5.js?v=20260925-1';
+  s.src='./ux-v5.js?v=20260925-2';
   s.defer=true;
   document.head.append(s);
 })();
