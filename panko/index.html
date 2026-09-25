@@ -20,6 +20,16 @@ const categories=[
 ['sleep',/ねむ|眠|寝|おやす|オフトゥン|起き/],['tired',/疲|つかれ|しんど|むり|無理|限界|だる|つかれた/],['work',/仕事|しごと|会社|残業|会議|出勤|退勤|案件|面談|働|業務/],['food',/腹|おなか|ごはん|飯|食べ|たべ|おいし|ランチ|夕飯|朝飯|ガラスープ|お菓子/],['bath',/風呂|おふろ|シャワー|カラダ.?アラウ/],['lonely',/寂|さみし|会いた|あいた|ひとり|暇|ひま/],['sad',/悲|かなしい|泣|つら|落ち込|へこ|いやだ|嫌だ/],['happy',/うれし|嬉|やった|最高|たのし|楽しい|よかった|よかた/],['affection',/かわい|可愛|すき|好き|だいすき|大好き|愛|ちゅ|ぎゅ/],['thanks',/ありがと|感謝|助かった|たすかった/],['sorry',/ごめん|すまん|申し訳/],['morning',/おはよ|おは$|朝/],['night',/おやすみ|おやす|夜/],['home',/ただいま|帰宅|帰った|かえった|帰る|かえる/],['call',/電話|通話|でんわ|話したい|しゃべりたい|声聞/],['question',/[?？]|なに|何|どう|どこ|いつ|なんで|なぜ/],['laugh',/w{2,}|笑|草|www|わろ/],['praise',/えらい|偉い|がんば|頑張|すごい|天才/],['agree',/それな|わかる|たしかに|確かに|そうだね|そだね/]
 ];
 const emotional=new Set(['tired','lonely','sad','affection','happy']);
+const callNames={
+'み':['みちゃこ','美砂','みさ','ぱっち','みちゃ','みーちゃん'],
+'も':['もっち','洋輔','ようすけ','よーすけ','洋輔さん','ようすけさん','よーすけさん']
+};
+const callBacks={
+'み':['みちゃこー','みちゃこ〜','美砂ー','美砂〜','ぱっちー','みちゃこさーん'],
+'も':['もっちー','もっち〜','洋輔ー','よーすけー','洋輔さーん','よーすけさーん']
+};
+function isNameCall(t){const n=normalize(t).replace(/さん|くん|ちゃん/g,'');if(n.length>14)return false;return callNames[partner].some(x=>n.includes(normalize(x).replace(/さん|くん|ちゃん/g,'')))}
+function nameCallReply(){const tokens=callNames[me],fromLog=[];for(const p of patterns){for(const r of p.replies){const nr=normalize(r);if(r.length<=28&&tokens.some(x=>nr.includes(normalize(x))))fromLog.push(r)}}const uniq=[...new Set(fromLog)].filter(r=>!recentReplies.includes(r));const curated=callBacks[me].filter(r=>!recentReplies.includes(r));const pool=(uniq.length?uniq:curated.length?curated:callBacks[me]);const reply=pool[Math.floor(Math.random()*pool.length)]||'おー';recentReplies.push(reply);return reply}
 function cats(t){const out=[];for(const [k,re] of categories)if(re.test(clean(t)))out.push(k);return out}
 const synonym=s=>normalize(s).replace(/しんどい|つかれた|疲れた|だるい|むり|無理/g,'疲れ').replace(/さみしい|さみし|寂しい/g,'寂しい').replace(/ねむい|ねむ|眠たい/g,'眠い').replace(/はらへった|腹減った|おなかすいた|お腹すいた/g,'ごはん').replace(/かえりたい|帰りたい/g,'帰る').replace(/かわいい|可愛い/g,'かわいい');
 const patterns=[],replyFreq=new Map();
@@ -49,7 +59,7 @@ if(p.context&&prevPartner)s+=4*overlap(gramset(prevPartner,2),gramset(p.context,
 s+=Math.min(3,Math.log2(1+p.count));return s}
 function weighted(items){const fresh=items.filter(x=>x.text?!recentReplies.includes(x.text):x.p.replies.some(r=>!recentReplies.includes(r))),src=fresh.length?fresh:items;if(!src.length)return null;const top=src.slice(0,18),weights=top.map((x,i)=>Math.max(.2,(x.s||1)/(1+i*.18))),total=weights.reduce((a,b)=>a+b,0);let r=Math.random()*total;for(let i=0;i<top.length;i++){r-=weights[i];if(r<=0)return top[i]}return top[0]}
 function genericReply(text){const ic=cats(text);let pool=generic.map(x=>({...x,s:Math.log2(1+x.count)}));if(ic.length){const matched=[];for(const p of patterns){if(!ic.some(c=>p.cats.includes(c)))continue;for(const r of p.replies)matched.push({text:r,s:3+Math.log2(1+p.count)})}if(matched.length)pool=matched.concat(pool)}const picked=weighted(pool);return picked?.text||'ほう'}
-function pickReply(text){const ranked=patterns.map(p=>({p,s:score(p,text)})).sort((a,b)=>b.s-a.s),best=ranked[0]?.s||0,second=ranked[1]?.s||0,ic=cats(text),hasEmotion=ic.some(c=>emotional.has(c));
+function pickReply(text){if(isNameCall(text))return nameCallReply();const ranked=patterns.map(p=>({p,s:score(p,text)})).sort((a,b)=>b.s-a.s),best=ranked[0]?.s||0,second=ranked[1]?.s||0,ic=cats(text),hasEmotion=ic.some(c=>emotional.has(c));
 const confident=best>=10&&(best-second>=1.2||best>=16);if(!confident)return genericReply(text);
 let pool=ranked.filter(x=>x.s>=Math.max(7,best-5));if(hasEmotion){const same=pool.filter(x=>ic.some(c=>emotional.has(c)&&x.p.cats.includes(c)));if(same.length)pool=same}
 const picked=weighted(pool);if(!picked)return genericReply(text);const reps=picked.p.replies.filter(r=>!recentReplies.includes(r)),arr=reps.length?reps:picked.p.replies,reply=arr[Math.floor(Math.random()*arr.length)];recentReplies.push(reply);return reply}
