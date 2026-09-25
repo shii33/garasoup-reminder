@@ -3,6 +3,16 @@
   const style=document.createElement('style');
   style.textContent=`
   .g11ident{display:none!important}
+  .g11room{
+    background-image:url('./assets/room/room-day.jpg')!important;
+    background-size:cover!important;
+    background-position:center bottom!important;
+    background-repeat:no-repeat!important;
+  }
+  .g11room.night{
+    background-image:url('./assets/room/room-night.jpg')!important;
+  }
+  .g11room:before,.g11room:after,.g11bed,.g11shelf{display:none!important;content:none!important}
   @media(max-width:720px){
     #g11{position:static!important;left:auto!important;transform:none!important;width:100%!important;max-width:100%!important;margin:0 auto!important;box-sizing:border-box!important}
     .g11w{width:100%!important;box-sizing:border-box!important}
