@@ -46,7 +46,7 @@
   setTimeout(place,0);setTimeout(place,300);setTimeout(place,1000);
   if(!document.querySelector('script[data-grow-speech-extra]')){
     const s=document.createElement('script');
-    s.src='./speech-extra.js?v=20260925-1';
+    s.src='./speech-extra.js?v=20260925-2';
     s.defer=true;
     s.dataset.growSpeechExtra='1';
     document.head.append(s);
