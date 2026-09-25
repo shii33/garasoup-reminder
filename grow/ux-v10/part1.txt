@@ -1,1 +1,26 @@
-test
+(()=>{
+if(!/\/grow\/?$/.test(location.pathname))return;
+const P='warera_grow_v1_',DB='warera-grow',STORE='pets';
+const N={み:'みちゃこ',も:'もっち'},ASSET='./assets/pets/common/',ROOM='./assets/room/';
+const BLOCK=/https?:\/\/|画像は含まれていません|スタンプは含まれていません|ビデオは含まれていません|メッセージをピン留め|アンケート:|音声通話|ビデオ通話|このメッセージは削除されました/i;
+const TOO_PRIVATE=/$a/;
+const RX={
+ morning:/おは|起き|おき|寝た|ねた|朝|お目覚め/,
+ sleep:/おやす|ねる|寝る|ねむ|眠|オフトゥン|すや|おふとん/,
+ feed:/ごはん|ご飯|飯|食べ|食う|腹|おなか|お腹|うま|おいし|美味|ランチ|おやつ|めし/,
+ bath:/風呂|フロ|おふろ|カラダ・アラウ|シャワ|洗う|洗って|湯気/,
+ affection:/好き|すき|しゅき|かわい|可愛|愛|メロ|はすはす|ぎゅ|ちゅ|幸せ|会いた|会えて|うれし|嬉し/,
+ play:/w{2,}|草|わろ|遊|しょもしょも|ゲーム|おもろ|面白|笑|www|なんやこれ|なにこれ/,
+ surprise:/ﾊｯ|ハッ|え[？?！!]|ま[？?]|なんで|はーん|ほう|うそ|マジ|まじ/,
+ tease:/やめ|こら|おい|なんや|なにそれ|はいはい|うるさ|近い|しつこ|www|w{3,}/,
+ ack:/^(うい|ういー|おけ|おけー|おけけ|りょ|了解|ふむ|ほう|そそ|あーね|なる|なるほど|はい|へい|よし|ん|うん)[！!。ー〜～w\s]*(.*)?$/i,
+ return:/おかえり|ただいま|おつ|お疲れ|おつかれ|また明日|きた|来た/,
+ comfort:/大丈夫|だいじょ|無理|むり|休|ゆっくり|よしよし|えらい|偉い/,
+ rareLove:/大好き|だいすき|好きだ|すきだ|幸せ|しあわせ|会いたい|かわいい|可愛い|愛して|しゅき|メロ/,
+};
+const FALLBACK={
+  み:{idle:['そそ','なある！','あーねw','おけけ','だん！','なんやこれ','もーなにこれ'],morning:['おはよん( ´꒳` )','あーんおはよ( ´꒳` )'],sleep:['おやすみーーん！！','ねるよーー！！'],feed:['おなかすいた','飯！','うまそ'],bath:['フロダン！','カラダ・アラウ'],play:['wwww','しょもしょも…','なんやこれw'],affection:['かわいいってば','ほんとすき','しゅきー'],tease:['やめろw','もーなにこれ'],surprise:['ﾊｯ！！！！！！！','え？'],return:['おかえりー'],comfort:['だいじょぶ','えらい']},
+  も:{idle:['ういー','ほう','ふむ','おけー','あーねwww','うぇいよー','そりゃあねぇw'],morning:['おはよーん','おはよーーー！'],sleep:['おやすみね','また明日ねーー','おれもねるだよーーー'],feed:['腹へった','飯たすかる'],bath:['おつだああああん','カラダ・アラウ'],play:['wwww','しょもしょも','楽しい。'],affection:['気が合いますねえ（好き','今日もかわいかったぞ','んふふ'],tease:['はいはいw','近い。','なにw'],surprise:['ﾊｯ','はーーーん？'],return:['おかえりー','おつかれさーん'],comfort:['無理すんなよ','ゆっくりしな']}
+};
+const CSS=`
+#g12{width:min(980px,calc(100vw - 24px));position:relative;left:50%;transform:translateX(-50%);margin:0 auto;color:#111}.g12shell{border:1px solid #111;border-radius:12px;background:#f5f5f5;box-shadow:4px 4px 0 rgba(0,0,0,.35);overflow:hidden}.g12top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;border-bottom:1px solid #111;background:#fff}.g12brand{display:flex;align-items:center;gap:9px}.g12brand .egg{display:grid;place-items:center;width:38px;height:38px;border:1px solid #111;border-radius:50%;background:#f5f5f5;font-size:20px}.g12brand b{font-size:17px}.g12brand small{display:block;margin-top:2px;color:#777;font-size:8px}.g12top-actions{display:flex;gap:6px}.g12mini{height:32px;padding:0 9px;border:1px solid #111;border-radius:8px;background:#fff;font:800 8px 'Noto Sans JP',sans-serif;box-shadow:2px 2px 0 rgba(0,0,0,.18)}.g12body{padding:10px}.g12grid{display:grid;grid-template-columns:minmax(0,2.25fr) minmax(240px,.75fr);gap:10px}.g12main,.g12side,.g12actions{border:1px solid #111;border-radius:10px;background:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.18)}.g12main{padding:10px}.g12head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.g12name{font-size:24px;font-weight:900}.g12stage{padding:5px 8px;border:1px solid #111;border-radius:999px;background:#fff;font-size:8px;font-weight:900}.g12room{position:relative;min-height:390px;overflow:hidden;border:1px solid #111;border-radius:9px;background-image:url('./assets/room/room-day.jpg');background-size:cover;background-position:center bottom}.g12room.night{background-image:url('./assets/room/room-night.jpg')}.g12status{position:absolute;left:10px;top:10px;z-index:8;max-width:180px;padding:7px 9px;border:1px solid #111;border-radius:8px;background:rgba(255,255,255,.94);box-shadow:2px 2px 0 rgba(0,0,0,.18);font-size:9px;font-weight:900}.g12branch{position:absolute;right:10px;bottom:10px;z-index:9;padding:5px 8px;border:1px solid #111;border-radius:999px;background:rgba(255,255,255,.94);font-size:8px;font-weight:900}.g12speech{position:absolute;left:50%;top:52px;z-index:10;max-width:min(72%,430px);transform:translateX(-50%);padding:9px 12px;border:1px solid #111;border-radius:10px;background:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.2);font-size:12px;font-weight:900;line-height:1.5;text-align:center}.g12speech:after{content:'';position:absolute;left:50%;bottom:-7px;width:12px;height:12px;border-right:1px solid #111;border-bottom:1px solid #111;background:#fff;transform:translateX(-50%) rotate(45deg)}.g12petbox{position:absolute;left:50%;bottom:18px;z-index:5;display:grid;place-items:end center;width:280px;height:245px;transform:translateX(-50%)}.g12pet{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 4px 0 rgba(0,0,0,.08));transition:.18s}.s-egg .g12pet{width:120px}.s-baby .g12pet{width:150px}.s-child .g12pet{width:190px}.s-a
