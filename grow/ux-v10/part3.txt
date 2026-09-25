@@ -19,7 +19,7 @@ function markNight(){const k=nightKey();if(S.lastNight!==k){S.lastNight=k;S.nigh
 function canSleepNow(){const h=new Date().getHours();return h>=21||h<9}
 function canWakeNow(){const h=new Date().getHours();return h>=7&&h<9}
 function nextNine(){const d=new Date();if(d.getHours()>=9)d.setDate(d.getDate()+1);d.setHours(9,0,0,0);return d.getTime()}
-function isAsleep(){if(stage()[0]==='egg')return false;const h=new Date().getHours();if(h<7){markNight();S.morningWakeDate='';S.manualSleepUntil=Math.max(Number(S.manualSleepUntil||0),nextNine());return true}if(h>=7&&h<9){return S.morningWakeDate!==today()&&Number(S.manualSleepUntil||0)>now()}if(h>=9)S.manualSleepUntil=0;return false}
+function isAsleep(){if(stage()[0]==='egg')return false;const h=new Date().getHours(),manual=Number(S.manualSleepUntil||0)>now();if(h<7){markNight();S.morningWakeDate='';S.manualSleepUntil=Math.max(Number(S.manualSleepUntil||0),nextNine());return true}if(h>=7&&h<9)return S.morningWakeDate!==today()&&manual;if(h>=21)return manual;if(h>=9&&h<21&&S.manualSleepUntil)S.manualSleepUntil=0;return false}
 function cleanText(t){return String(t||'').replace(/[\u200e\u200f]/g,'').trim()}
 function usable(t){t=cleanText(t);return !!t&&t.length<=90&&t.split('\n').length<=3&&!BLOCK.test(t)&&!TOO_PRIVATE.test(t)}
 function addPool(pools,key,e,seen){if(!pools[key])pools[key]=[];const nk=key+'\0'+e.text;if(seen.has(nk))return;seen.add(nk);pools[key].push(e)}
