@@ -2,6 +2,7 @@
   if(!/\/grow\/?$/.test(location.pathname))return;
   const style=document.createElement('style');
   style.textContent=`
+  .g11ident{display:none!important}
   @media(max-width:720px){
     #g11{position:static!important;left:auto!important;transform:none!important;width:100%!important;max-width:100%!important;margin:0 auto!important;box-sizing:border-box!important}
     .g11w{width:100%!important;box-sizing:border-box!important}
@@ -29,7 +30,8 @@
   function place(){
     const root=document.getElementById('g11');
     if(!root)return;
-    const dock=root.querySelector('.g11dock'),left=root.querySelector('.g11left'),room=root.querySelector('.g11room'),grid=root.querySelector('.g11grid'),right=root.querySelector('.g11right');
+    const dock=root.querySelector('.g11dock'),left=root.querySelector('.g11left'),room=root.querySelector('.g11room'),grid=root.querySelector('.g11grid'),right=root.querySelector('.g11right'),status=root.querySelector('#g11status'),stage=root.querySelector('#g11stage');
+    if(status)status.style.display=stage?.textContent?.includes('たまご')?'none':'';
     if(!dock||!left||!room||!grid)return;
     if(mq.matches){
       if(dock.parentElement!==left){left.insertBefore(dock,room.nextSibling)}
@@ -40,7 +42,7 @@
     }
   }
   const observer=new MutationObserver(place);
-  observer.observe(document.documentElement,{childList:true,subtree:true});
+  observer.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
   mq.addEventListener?.('change',place);
   addEventListener('resize',place,{passive:true});
   setTimeout(place,0);setTimeout(place,300);setTimeout(place,1000);
