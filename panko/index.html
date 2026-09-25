@@ -18,7 +18,7 @@ const normalize=t=>clean(t).toLowerCase().replace(/[\s　。、！？!?,.・…�
 const gramset=(t,n)=>{const s=normalize(t),a=new Set();for(let i=0;i<=s.length-n;i++)a.add(s.slice(i,i+n));return a};
 const overlap=(a,b)=>{if(!a.size||!b.size)return 0;let h=0;for(const x of a)if(b.has(x))h++;return h/Math.max(a.size,b.size)};
 const categories=[
-['sleep',/ねむ|眠|寝|おやす|オフトゥン|起き/],['tired',/疲|つかれ|しんど|むり|無理|限界|だる|つかれた/],['work',/仕事|しごと|会社|残業|会議|出勤|退勤|案件|面談|働|業務/],['food',/腹|おなか|ごはん|飯|食べ|たべ|おいし|ランチ|夕飯|朝飯|ガラスープ|お菓子/],['bath',/風呂|おふろ|シャワー|カラダ.?アラウ/],['lonely',/寂|さみし|会いた|あいた|ひとり|暇|ひま/],['sad',/悲|かなしい|泣|つら|落ち込|へこ|いやだ|嫌だ/],['happy',/うれし|嬉|やった|最高|たのし|楽しい|よかった|よかた/],['affection',/かわい|可愛|すき|好き|だいすき|大好き|愛|ちゅ|ぎゅ/],['thanks',/ありがと|感謝|助かった|たすかった/],['sorry',/ごめん|すまん|申し訳/],['morning',/おはよ|おは$|朝/],['night',/おやすみ|おやす|夜/],['home',/ただいま|帰宅|帰った|かえった|帰る|かえる/],['call',/電話|通話|でんわ|話したい|しゃべりたい|声聞/],['question',/[?？]|なに|何|どう|どこ|いつ|なんで|なぜ/],['laugh',/w{2,}|笑|草|www|わろ/],['praise',/えらい|偉い|がんば|頑張|すごい|天才/],['agree',/それな|わかる|たしかに|確かに|そうだね|そだね/]
+['sleep',/ねむ|眠|寝|おやす|オフトゥン|起き/],['tired',/疲|つかれ|しんど|むり|無理|限界|だる|つかれた/],['work',/仕事|しごと|会社|残業|会議|出勤|退勤|案件|面談|働|業務/],['food',/腹|おなか|ごはん|飯|食べ|たべ|おいし|ランチ|夕飯|朝飯|ガラスープ|お菓子/],['bath',/風呂|おふろ|シャワー|カラダ.?アラウ/],['lonely',/寂|さみし|会いた|あいた|ひとり|暇|ひま/],['sad',/悲|かなしい|泣|つら|落ち込|へこ|いやだ|嫌だ/],['happy',/うれし|嬉|やった|最高|たのし|楽しい|よかった|よかた/],['affection',/かわい|可愛|すき|好き|しゅき|しゅきぃ|しゅきー|だいすき|大好き|愛|ちゅ|ぎゅ/],['thanks',/ありがと|感謝|助かった|たすかった/],['sorry',/ごめん|すまん|申し訳/],['morning',/おはよ|おは$|朝/],['night',/おやすみ|おやす|夜/],['home',/ただいま|帰宅|帰った|かえった|帰る|かえる/],['call',/電話|通話|でんわ|話したい|しゃべりたい|声聞/],['question',/[?？]|なに|何|どう|どこ|いつ|なんで|なぜ/],['laugh',/w{2,}|笑|草|www|わろ/],['praise',/えらい|偉い|がんば|頑張|すごい|天才/],['agree',/それな|わかる|たしかに|確かに|そうだね|そだね/]
 ];
 const emotional=new Set(['tired','lonely','sad','affection','happy']);
 const callNames={
@@ -32,7 +32,7 @@ const callBacks={
 function isNameCall(t){const n=normalize(t).replace(/さん|くん|ちゃん/g,'');if(n.length>14)return false;return callNames[partner].some(x=>n.includes(normalize(x).replace(/さん|くん|ちゃん/g,'')))}
 function nameCallReply(){const tokens=callNames[me],fromLog=[];for(const p of patterns){for(const r of p.replies){const nr=normalize(r);if(r.length<=28&&tokens.some(x=>nr.includes(normalize(x))))fromLog.push(r)}}const uniq=[...new Set(fromLog)].filter(r=>!recentReplies.includes(r));const curated=callBacks[me].filter(r=>!recentReplies.includes(r));const pool=(uniq.length?uniq:curated.length?curated:callBacks[me]);const reply=pool[Math.floor(Math.random()*pool.length)]||'おー';recentReplies.push(reply);return reply}
 function cats(t){const out=[];for(const [k,re] of categories)if(re.test(clean(t)))out.push(k);return out}
-const synonym=s=>normalize(s).replace(/しんどい|つかれた|疲れた|だるい|むり|無理/g,'疲れ').replace(/さみしい|さみし|寂しい/g,'寂しい').replace(/ねむい|ねむ|眠たい/g,'眠い').replace(/はらへった|腹減った|おなかすいた|お腹すいた/g,'ごはん').replace(/かえりたい|帰りたい/g,'帰る').replace(/かわいい|可愛い/g,'かわいい');
+const synonym=s=>normalize(s).replace(/しんどい|つかれた|疲れた|だるい|むり|無理/g,'疲れ').replace(/さみしい|さみし|寂しい/g,'寂しい').replace(/ねむい|ねむ|眠たい/g,'眠い').replace(/はらへった|腹減った|おなかすいた|お腹すいた/g,'ごはん').replace(/かえりたい|帰りたい/g,'帰る').replace(/かわいい|可愛い/g,'かわいい').replace(/大好き|だいすき|しゅきぃ|しゅきー|しゅき|好き|すき/g,'好き');
 const patterns=[],replyFreq=new Map();
 function addPattern(prompt,replies,context='',source='memory'){
 prompt=clean(prompt);replies=(replies||[]).map(clean).filter(ok).slice(0,3);if(!ok(prompt)||!replies.length)return;
