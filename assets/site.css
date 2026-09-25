@@ -128,3 +128,4 @@ button,input,select{font:inherit}
   .bubble{max-width:84%}
   .quiz-tabs{grid-template-columns:1fr}
 }
+.conversation-shell:has(.grow-shell)>.app-title,.grow-shell{display:none!important}
