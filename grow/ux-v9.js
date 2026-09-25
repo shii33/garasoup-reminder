@@ -27,6 +27,12 @@
       );
 
       replace(
+        "function quality(a){const L=lv(),v={feed:L.hunger,bath:L.clean,play:L.mood,pat:S.needs.bond,sleep:L.sleep}[a];if(a==='toilet')return S.poop>0?3:0;if(v==null)return 0;if(v<30)return 3;if(v<55)return 2;if(v<75)return 1;return 0}",
+        "function quality(a){const L=lv(),v={feed:L.hunger,bath:L.clean,play:L.mood,pat:S.needs.bond,sleep:L.sleep}[a];if(a==='toilet')return S.poop>0?3:0;if(v==null)return 0;if(v<35)return 3;if(v<65)return 2;if(v<95)return 1;return 0}",
+        'お世話受付ライン'
+      );
+
+      replace(
         "async function egg(a){const t=Number(S.actionTimes[`egg:${a}`]||0),repeat=now()-t<5*60000,first=!S.eggActions[a];const gain=first?8:repeat?0:2;",
         "async function egg(a){const t=Number(S.actionTimes[`egg:${a}`]||0),repeat=now()-t<60000,first=!S.eggActions[a];const gain=first?10:repeat?2:5;",
         'たまご育成'
