@@ -21,11 +21,11 @@ const categories=[
 ];
 const emotional=new Set(['tired','lonely','sad','affection','happy']);
 const callNames={
-'み':['みちゃこ','美砂','みさ','ぱっち','みちゃ','みーちゃん'],
+'み':['みちゃこ','美砂','みさ','みちゃ','みーちゃん'],
 'も':['もっち','洋輔','ようすけ','よーすけ','洋輔さん','ようすけさん','よーすけさん']
 };
 const callBacks={
-'み':['みちゃこー','みちゃこ〜','美砂ー','美砂〜','ぱっちー','みちゃこさーん'],
+'み':['みちゃこー','みちゃこ〜','美砂ー','美砂〜','みちゃこさーん'],
 'も':['もっちー','もっち〜','洋輔ー','よーすけー','洋輔さーん','よーすけさーん']
 };
 function isNameCall(t){const n=normalize(t).replace(/さん|くん|ちゃん/g,'');if(n.length>14)return false;return callNames[partner].some(x=>n.includes(normalize(x).replace(/さん|くん|ちゃん/g,'')))}
