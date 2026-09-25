@@ -11,7 +11,7 @@ const name=partner==='み'?'みちゃこ（パン粉）':'もっち（パン粉�
 document.getElementById('partnerName').textContent=name;document.getElementById('partnerAvatar').src=avatar;
 const [rows,quiz]=await Promise.all([WareraData.memories('../'),WareraData.expandedQuiz('../')]);
 const list=document.getElementById('chatList'),panel=document.getElementById('chatPanel'),input=document.getElementById('input'),send=document.getElementById('send'),reset=document.getElementById('reset');
-const BAD=/(https?:\/\/|www\.|続きを読む|^\[|^<|株式会社|〒|@\w+|\{.{20,}\}|```)/i;
+const BAD=/(https?:\/\/|www\.|続きを読む|^\[|^<|株式会社|〒|@\w+|\{.{20,}\}|```|音声通話)/i;
 const clean=t=>String(t||'').replace(/\u200e/g,'').trim();
 const ok=t=>{t=clean(t);return t&&t.length<=110&&!BAD.test(t)&&!t.includes('\n')};
 const normalize=t=>clean(t).toLowerCase().replace(/[\s　。、！？!?,.・…〜～ー―「」『』（）()\[\]【】]/g,'');
