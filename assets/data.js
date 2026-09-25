@@ -46,6 +46,9 @@
   const s=document.createElement('script');
   s.src='./ux-v9.js?v=20260925-3';
   s.defer=true;
-  s.onload=()=>{const f=document.createElement('script');f.src='./mobile-fix.js?v=20260925-5';f.defer=true;document.head.append(f)};
+  s.onload=()=>{
+    const f=document.createElement('script');f.src='./mobile-fix.js?v=20260925-5';f.defer=true;document.head.append(f);
+    const b=document.createElement('script');b.src='./branch-label.js?v=20260925-1';b.defer=true;document.head.append(b);
+  };
   document.head.append(s);
 })();
