@@ -14,12 +14,13 @@ function ageDays(){return Math.max(0,Math.floor((new Date()-new Date((S.born||to
 function uniqueCare(){return Object.keys(S.actions||{}).filter(k=>['feed','play','pat','bath','toilet'].includes(k)&&S.actions[k]>0).length}
 function resolveEvolution(){if(S.stageRank===0){const n=Object.values(S.eggActions||{}).reduce((a,b)=>a+Number(b||0),0),u=Object.keys(S.eggActions||{}).filter(k=>S.eggActions[k]>0).length;if(n>=5&&u>=3)S.stageRank=1}if(S.stageRank===1&&S.experience>=16&&uniqueCare()>=3)S.stageRank=2;if(S.stageRank===2&&S.experience>=48&&S.nights>=1&&uniqueCare()>=4)S.stageRank=3;if(S.stageRank>=2&&!S.childType){const t=S.traits;S.childType=(t.clingy+t.overcare*.45+t.playful*.15)>(t.independent+t.gentle*.15)?'affection':'plain'}if(S.stageRank===3&&!S.personality){const t=S.traits;if(t.independent>t.clingy*1.22&&t.independent>t.overcare*1.4)S.personality='aloof';else if(t.overcare>4&&t.overcare>t.gentle*.55)S.personality='tsundere';else S.personality='dere'}}
 function branchLabel(){const [st]=stage();if(st==='child')return S.childType==='affection'?'かまわれ育ち':'マイペース育ち';if(st==='adult')return S.personality==='aloof'?'そっけない系':S.personality==='tsundere'?'ツンデレ系':'でれ系';return''}
-function nightKey(d=new Date()){const x=new Date(d);if(x.getHours()<9)x.setDate(x.getDate()-1);return x.toISOString().slice(0,10)}
+function localDateKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function nightKey(d=new Date()){const x=new Date(d);if(x.getHours()<9)x.setDate(x.getDate()-1);return localDateKey(x)}
 function markNight(){const k=nightKey();if(S.lastNight!==k){S.lastNight=k;S.nights++;S.experience+=1}}
 function canSleepNow(){const h=new Date().getHours();return h>=21||h<9}
 function canWakeNow(){const h=new Date().getHours();return h>=7&&h<9}
 function nextNine(){const d=new Date();if(d.getHours()>=9)d.setDate(d.getDate()+1);d.setHours(9,0,0,0);return d.getTime()}
-function isAsleep(){if(stage()[0]==='egg')return false;const h=new Date().getHours(),manual=Number(S.manualSleepUntil||0)>now();if(h<7){markNight();S.morningWakeDate='';S.manualSleepUntil=Math.max(Number(S.manualSleepUntil||0),nextNine());return true}if(h>=7&&h<9)return S.morningWakeDate!==today()&&manual;if(h>=21)return manual;if(h>=9&&h<21&&S.manualSleepUntil)S.manualSleepUntil=0;return false}
+function isAsleep(){if(stage()[0]==='egg')return false;const h=new Date().getHours(),manual=Number(S.manualSleepUntil||0)>now();if(h<7){markNight();S.morningWakeDate='';S.manualSleepUntil=Math.max(Number(S.manualSleepUntil||0),nextNine());return true}if(h>=7&&h<9){markNight();if(S.morningWakeDate===today())return false;if(!manual)S.manualSleepUntil=nextNine();return true}if(h>=21)return manual;if(h>=9&&h<21&&S.manualSleepUntil)S.manualSleepUntil=0;return false}
 function cleanText(t){return String(t||'').replace(/[\u200e\u200f]/g,'').trim()}
 function usable(t){t=cleanText(t);return !!t&&t.length<=90&&t.split('\n').length<=3&&!BLOCK.test(t)&&!TOO_PRIVATE.test(t)}
 function addPool(pools,key,e,seen){if(!pools[key])pools[key]=[];const nk=key+'\0'+e.text;if(seen.has(nk))return;seen.add(nk);pools[key].push(e)}
