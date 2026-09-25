@@ -28,8 +28,26 @@
 
       replace(
         "function quality(a){const L=lv(),v={feed:L.hunger,bath:L.clean,play:L.mood,pat:S.needs.bond,sleep:L.sleep}[a];if(a==='toilet')return S.poop>0?3:0;if(v==null)return 0;if(v<30)return 3;if(v<55)return 2;if(v<75)return 1;return 0}",
-        "function quality(a){const L=lv(),v={feed:L.hunger,bath:L.clean,play:L.mood,pat:S.needs.bond,sleep:L.sleep}[a];if(a==='toilet')return S.poop>0?3:0;if(v==null)return 0;if(v<35)return 3;if(v<65)return 2;if(v<95)return 1;return 0}",
+        "function quality(a){const L=lv(),v={feed:L.hunger,bath:L.clean,play:L.mood,pat:S.needs.bond,sleep:L.sleep}[a];if(a==='toilet')return S.poop>0?3:0;if(v==null)return 1;if(v<35)return 3;if(v<65)return 2;return 1}",
         'お世話受付ライン'
+      );
+
+      replace(
+        "function decay(){const h=Math.min(72,Math.max(0,(now()-S.lastTick)/36e5));if(h<.02)return;const r=rates();S.needs.hunger=clamp(S.needs.hunger-h*r.hunger);S.needs.sleep=clamp(S.needs.sleep+h*(isAsleep()?1:-r.sleep));S.needs.mood=clamp(S.needs.mood-h*r.mood);S.needs.bond=clamp(S.needs.bond-h*r.bond);S.needs.clean=clamp(S.needs.clean-h*r.clean);S.toiletMeter+=h*1.8;while(S.toiletMeter>=100&&S.poop<2){S.toiletMeter-=100;S.poop++;S.needs.clean=clamp(S.needs.clean-14)}if(h>=4&&Object.values(lv()).some(v=>v<15))S.careMistakes++;S.lastTick=now()}",
+        "function decay(){const h=Math.min(72,Math.max(0,(now()-S.lastTick)/36e5));if(h<.02)return;const r=rates(),sleeping=isAsleep(),slow=sleeping?.22:1;S.needs.hunger=clamp(S.needs.hunger-h*r.hunger*slow);S.needs.sleep=clamp(S.needs.sleep+h*(sleeping?2.2:-r.sleep));S.needs.mood=clamp(S.needs.mood-h*r.mood*slow);S.needs.bond=clamp(S.needs.bond-h*r.bond*slow);S.needs.clean=clamp(S.needs.clean-h*r.clean*slow);S.toiletMeter+=h*1.8*slow;while(S.toiletMeter>=100&&S.poop<2){S.toiletMeter-=100;S.poop++;S.needs.clean=clamp(S.needs.clean-14)}if(!sleeping&&h>=4&&Object.values(lv()).some(v=>v<15))S.careMistakes++;S.lastTick=now()}",
+        '睡眠中の減衰'
+      );
+
+      replace(
+        "function isAsleep(){return now()<Number(S.sleepUntil||0)}",
+        "function isAsleep(){return now()<Number(S.sleepUntil||0)}\nfunction syncNightSleep(){if(stage()[0]==='egg')return;const d=new Date(),h=d.getHours();if(h>=23||h<7){const wake=new Date(d);if(h>=23)wake.setDate(wake.getDate()+1);wake.setHours(7,0,0,0);S.sleepUntil=Math.max(Number(S.sleepUntil||0),wake.getTime())}else if(Number(S.sleepUntil||0)<=now())S.sleepUntil=0}",
+        '夜間自動睡眠'
+      );
+
+      replace(
+        "function render(){decay();resolveEvolution();",
+        "function render(){syncNightSleep();decay();resolveEvolution();",
+        '夜間睡眠反映'
       );
 
       replace(
@@ -39,7 +57,7 @@
       );
 
       replace("const gain=n<3?2:0;","const gain=n<3?4:0;",'ことば加点');
-      src=src.replace('必要なときのお世話ほど育つ。連打ではほぼ増えない。','必要なときのお世話ほどよく育つ。いろんなお世話をするとさらに育ちやすい。');
+      src=src.replace('必要なときのお世話ほど育つ。連打ではほぼ増えない。','お世話はいつでもできる。いろんなお世話をすると、より育ちやすい。');
 
       const blob=new Blob([src],{type:'text/javascript'});
       const url=URL.createObjectURL(blob);
