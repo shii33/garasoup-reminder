@@ -41,7 +41,7 @@
 (()=>{
   if(!/\/grow\/?$/.test(location.pathname))return;
   const style=document.createElement('style');
-  style.textContent='#speechNote{display:none!important}.mini-panel:has(#history){display:none!important}.needs>.need:not(.ux-need){visibility:hidden!important}';
+  style.textContent='.grow-shell,.app-title{display:none!important}#speechNote{display:none!important}.mini-panel:has(#history){display:none!important}.needs>.need:not(.ux-need){visibility:hidden!important}';
   document.head.append(style);
   const s=document.createElement('script');
   s.src='./ux-v6.js?v=20260925-3';
