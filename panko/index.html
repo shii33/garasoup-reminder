@@ -1,48 +1,60 @@
 <!DOCTYPE html><html lang="ja" class="notranslate" translate="no"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="google" content="notranslate"><meta name="robots" content="noindex,nofollow,noarchive"><title>パン粉なわれわれ｜我らのあそび場</title><link rel="stylesheet" href="../assets/site.css"><style>
-.panko-shell{display:grid;grid-template-rows:auto auto auto;gap:10px}.panko-note{margin:-3px 0 4px;color:#777;font-size:10px}.chat-panel{height:420px;max-height:52vh;overflow:auto;padding:14px;border:1px solid #111;border-radius:10px;background:#fff;box-shadow:4px 4px 0 rgba(0,0,0,.42);scroll-behavior:smooth}.chat-list{display:grid;gap:8px}.chat-line.panko-typing .bubble{color:#777}.composer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.composer textarea{width:100%;min-height:44px;max-height:120px;resize:none;border:1px solid #111;border-radius:10px;padding:10px 11px;background:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.35);font:inherit;font-size:16px;line-height:1.45;box-sizing:border-box}.composer .press-btn{min-width:70px}.panko-head{display:flex;align-items:center;gap:8px;margin:0 0 8px}.panko-head img{width:32px;height:32px;border-radius:50%;object-fit:cover;transform:scale(1.02)}.panko-head b{font-size:13px}.panko-head small{display:block;margin-top:2px;color:#888;font-size:9px;font-weight:400}.tiny-actions{display:flex;justify-content:flex-end;margin-top:3px}.reset-btn{border:0;background:none;padding:2px 0;color:#888;font:inherit;font-size:9px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
-@media(max-width:580px){.panko-shell{display:flex;flex-direction:column;gap:8px;height:calc(100dvh - 232px);min-height:0}.panko-head{flex:0 0 auto}.chat-panel{flex:1 1 auto;height:auto;min-height:180px;max-height:none;padding:11px;box-shadow:3px 3px 0 rgba(0,0,0,.42)}.panko-shell>div:last-child{flex:0 0 auto;margin-top:0}.composer{gap:7px}.composer textarea{min-height:42px;padding:9px 10px}.composer .press-btn{min-width:58px}.panko-note{font-size:9px;margin-bottom:1px}}
+.panko-shell{display:grid;grid-template-rows:auto auto auto;gap:10px}.panko-note{margin:-3px 0 4px;color:#777;font-size:10px}.chat-panel{height:420px;max-height:52vh;overflow:auto;padding:14px;border:1px solid #111;border-radius:10px;background:#fff;box-shadow:4px 4px 0 rgba(0,0,0,.42);scroll-behavior:smooth}.chat-list{display:grid;gap:8px}.chat-line.panko-typing .bubble{color:#777}.composer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.composer textarea{width:100%;min-height:44px;max-height:120px;resize:none;border:1px solid #111;border-radius:10px;padding:10px 11px;background:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.35);font:inherit;font-size:16px;line-height:1.45;box-sizing:border-box}.composer .press-btn{min-width:70px}.panko-head{display:flex;align-items:center;gap:8px;margin:0 0 8px}.panko-head img{width:32px;height:32px;border-radius:50%;object-fit:cover}.panko-head b{font-size:13px}.panko-head small{display:block;margin-top:2px;color:#888;font-size:9px;font-weight:400}.tiny-actions{display:flex;justify-content:flex-end;margin-top:3px}.reset-btn{border:0;background:none;padding:2px 0;color:#888;font:inherit;font-size:9px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+@media(max-width:580px){.panko-shell{display:flex;flex-direction:column;gap:8px;height:calc(100dvh - 232px);min-height:0}.panko-head{flex:0 0 auto}.chat-panel{flex:1 1 auto;height:auto;min-height:180px;max-height:none;padding:11px;box-shadow:3px 3px 0 rgba(0,0,0,.42)}.panko-shell>div:last-child{flex:0 0 auto}.composer{gap:7px}.composer textarea{min-height:42px;padding:9px 10px}.composer .press-btn{min-width:58px}.panko-note{font-size:9px;margin-bottom:1px}}
 </style></head><body><header class="site-header"><div class="site-header__inner"><a class="brand" href="../">我らのあそび場</a><button class="lock-btn" data-lock>鍵をかける</button></div></header><main class="shell app-shell conversation-shell"><div class="backline"><a href="../">← あそび場にもどる</a></div><section class="app-title"><div class="icon">🍞</div><div><h1>パン粉なわれわれ</h1></div></section><p class="panko-note">本人が戻ってくるまで、パン粉でつないどきます。</p><section class="panko-shell"><div class="panko-head"><img id="partnerAvatar" alt=""><div><b id="partnerName">---</b><small>本人ではありません。過去ログを混ぜたパン粉です。</small></div></div><div class="chat-panel" id="chatPanel"><div class="chat-list" id="chatList"></div></div><div><div class="composer"><textarea id="input" rows="1" placeholder="話しかける"></textarea><button class="press-btn primary" id="send">送る</button></div><div class="tiny-actions"><button class="reset-btn" id="reset">会話をリセット</button></div></div></section></main><script src="../assets/auth.js"></script><script src="../assets/common.js"></script><script src="../assets/data.js"></script><script>
 (async()=>{
-  wireLock('../');
-  const KEY='warera_chat_perspective',HISTORY_KEY='warera_panko_history_v1',RECENT_KEY='warera_panko_recent_v1';
-  const me=(()=>{try{const v=localStorage.getItem(KEY);return v==='も'?'も':'み'}catch(e){return'み'}})(),partner=me==='み'?'も':'み';
-  const name=partner==='み'?'みちゃこ（パン粉）':'もっち（パン粉）',avatar=partner==='み'?'../assets/avatars/mi.jpg':'../assets/avatars/mo.jpg';
-  document.getElementById('partnerName').textContent=name;document.getElementById('partnerAvatar').src=avatar;
-  const [rows,quiz]=await Promise.all([WareraData.memories('../'),WareraData.expandedQuiz('../')]);
-  const list=document.getElementById('chatList'),panel=document.getElementById('chatPanel'),input=document.getElementById('input'),send=document.getElementById('send'),reset=document.getElementById('reset');
-  const BAD=/(https?:\/\/|www\.|続きを読む|^\[|^<|株式会社|〒|@\w+|\{.{20,}\}|```)/i;
-  const clean=t=>String(t||'').replace(/\u200e/g,'').trim();
-  const ok=t=>{t=clean(t);return t&&t.length<=90&&!BAD.test(t)&&!t.includes('\n')};
-  const normalize=t=>clean(t).toLowerCase().replace(/[\s　。、！？!?,.・…〜～ー―「」『』（）()\[\]【】]/g,'');
-  const grams=t=>{const s=normalize(t),a=[];for(let i=0;i<s.length-1;i++)a.push(s.slice(i,i+2));return new Set(a)};
-  const categories=[
-    ['sleep',/ねむ|眠|寝|おやす|オフトゥン|起き/],['tired',/疲|つかれ|しんど|むり|無理|限界|だる/],['work',/仕事|しごと|会社|残業|会議|出勤|退勤|案件|面談|働/],['food',/腹|おなか|ごはん|飯|食べ|たべ|おいし|ランチ|夕飯|朝飯|ガラスープ/],['bath',/風呂|おふろ|シャワー|カラダ.?アラウ/],['lonely',/寂|さみし|会いた|あいた|ひとり|暇|ひま/],['sad',/悲|かなしい|泣|つら|落ち込|へこ/],['happy',/うれし|嬉|やった|最高|たのし|楽しい|よかった/],['cute',/かわい|可愛|すき|好き|愛/],['thanks',/ありがと|感謝|助かった/],['sorry',/ごめん|すまん|申し訳/],['morning',/おはよ|おは$|朝/],['night',/おやすみ|おやす|夜/],['home',/ただいま|帰宅|帰った|かえった|帰る/],['call',/電話|通話|でんわ|話したい|しゃべりたい/],['question',/[?？]|なに|何|どう|どこ|いつ|なんで|なぜ/],['laugh',/w{2,}|笑|草|www/]
-  ];
-  function cats(t){const out=[];for(const [k,re] of categories)if(re.test(clean(t)))out.push(k);return out}
-  const patterns=[],fallback=[];
-  function addPattern(prompt,replies,source='memory'){
-    prompt=clean(prompt);replies=(replies||[]).map(clean).filter(ok).slice(0,3);if(!ok(prompt)||!replies.length)return;
-    patterns.push({prompt,replies,cats:cats(prompt),g:grams(prompt),source});
-    replies.forEach(r=>fallback.push({text:r,cats:cats(prompt)}));
-  }
-  for(const s of rows){const lines=(s.lines||[]).map(x=>({who:x.who,text:clean(x.text)})).filter(x=>(x.who==='み'||x.who==='も')&&ok(x.text));for(let i=0;i<lines.length;i++){
-      const a=lines[i];if(a.who!==me)continue;const replies=[];for(let j=i+1;j<Math.min(lines.length,i+5);j++){if(lines[j].who===partner)replies.push(lines[j].text);else if(replies.length)break;else break}if(replies.length)addPattern(a.text,replies);
-    }}
-  for(const q of (quiz.next||[])){if(q.prompt_who===me&&q.answer_who===partner)addPattern(q.prompt,[q.answer],'quiz')}
-  const unique=[];const seen=new Set();for(const p of patterns){const k=normalize(p.prompt)+'|'+p.replies.join('\u0001');if(!seen.has(k)){seen.add(k);unique.push(p)}}
-  patterns.length=0;patterns.push(...unique);
-  const fb=[];const fs=new Set();for(const x of fallback){if(!fs.has(x.text)){fs.add(x.text);fb.push(x)}}fallback.length=0;fallback.push(...fb);
-  let recentReplies=[];try{recentReplies=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]')}catch(e){}
-  let history=[];try{history=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]')}catch(e){}if(!Array.isArray(history))history=[];history=history.filter(x=>x&&(x.who===me||x.who===partner)&&ok(x.text)).slice(-80);
-  function rowNode(who,text,typing=false){const row=document.createElement('div');row.className='chat-line '+(who===me?'mine self':'other')+(typing?' panko-typing':'');const w=document.createElement('span');w.className='who';w.dataset.who=who;w.textContent=who;const b=document.createElement('div');b.className='bubble';b.textContent=text;if(who===me)row.append(b,w);else row.append(w,b);return row}
-  function render(){list.replaceChildren();for(const h of history)list.append(rowNode(h.who,h.text));requestAnimationFrame(()=>panel.scrollTop=panel.scrollHeight)}
-  function save(){localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(-80)));localStorage.setItem(RECENT_KEY,JSON.stringify(recentReplies.slice(-50)))}
-  function score(p,text,context){const ng=grams(text),pc=p.cats,ic=cats(text),cc=cats(context);let s=0;if(normalize(text)===normalize(p.prompt))s+=18;for(const c of ic)if(pc.includes(c))s+=5;for(const c of cc)if(pc.includes(c))s+=1.5;let hit=0;for(const g of ng)if(p.g.has(g))hit++;if(ng.size&&p.g.size)s+=10*hit/Math.max(ng.size,p.g.size);const a=normalize(text),b=normalize(p.prompt);if(a&&b&&(a.includes(b)||b.includes(a)))s+=5;if(Math.abs(a.length-b.length)<5)s+=.5;return s}
-  function pickReply(text){const context=history.slice(-4).map(x=>x.text).join(' '),ranked=patterns.map(p=>({p,s:score(p,text,context)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s);let pool=[];if(ranked.length&&ranked[0].s>=3){const cap=Math.min(ranked.length,Math.max(10,Math.round(ranked.length*.08)));pool=ranked.slice(0,cap)}else{const ic=cats(text),same=fallback.filter(x=>ic.some(c=>x.cats.includes(c)));pool=(same.length?same:fallback).map(x=>({p:{replies:[x.text]},s:1}))}
-    const fresh=pool.filter(x=>x.p.replies.some(r=>!recentReplies.includes(r)));const src=fresh.length?fresh:pool;if(!src.length)return partner==='み'?'ほう':'ほう';const top=src.slice(0,Math.min(24,src.length));const weights=top.map((x,i)=>Math.max(.6,(x.s||1)+2/(i+1))),total=weights.reduce((a,b)=>a+b,0);let r=Math.random()*total,chosen=top[0];for(let i=0;i<top.length;i++){r-=weights[i];if(r<=0){chosen=top[i];break}}const reps=chosen.p.replies.filter(x=>!recentReplies.includes(x));const arr=reps.length?reps:chosen.p.replies;const first=arr[Math.floor(Math.random()*arr.length)];recentReplies.push(first);return first}
-  function autoresize(){input.style.height='auto';input.style.height=Math.min(input.scrollHeight,120)+'px'}
-  async function talk(){const text=clean(input.value);if(!text||send.disabled)return;history.push({who:me,text});input.value='';autoresize();render();save();send.disabled=true;const typing=rowNode(partner,'…',true);list.append(typing);panel.scrollTop=panel.scrollHeight;const reply=pickReply(text);await new Promise(r=>setTimeout(r,Math.min(1300,420+reply.length*24+Math.random()*320)));typing.remove();history.push({who:partner,text:reply});render();save();send.disabled=false;input.focus()}
-  send.onclick=talk;input.addEventListener('input',autoresize);input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();talk()}});reset.onclick=()=>{history=[];recentReplies=[];save();render();input.focus()};
-  render();autoresize();
+wireLock('../');
+const KEY='warera_chat_perspective',HISTORY_KEY='warera_panko_history_v2',RECENT_KEY='warera_panko_recent_v2';
+const me=(()=>{try{const v=localStorage.getItem(KEY);return v==='も'?'も':'み'}catch(e){return'み'}})(),partner=me==='み'?'も':'み';
+const name=partner==='み'?'みちゃこ（パン粉）':'もっち（パン粉）',avatar=partner==='み'?'../assets/avatars/mi.jpg':'../assets/avatars/mo.jpg';
+document.getElementById('partnerName').textContent=name;document.getElementById('partnerAvatar').src=avatar;
+const [rows,quiz]=await Promise.all([WareraData.memories('../'),WareraData.expandedQuiz('../')]);
+const list=document.getElementById('chatList'),panel=document.getElementById('chatPanel'),input=document.getElementById('input'),send=document.getElementById('send'),reset=document.getElementById('reset');
+const BAD=/(https?:\/\/|www\.|続きを読む|^\[|^<|株式会社|〒|@\w+|\{.{20,}\}|```)/i;
+const clean=t=>String(t||'').replace(/\u200e/g,'').trim();
+const ok=t=>{t=clean(t);return t&&t.length<=110&&!BAD.test(t)&&!t.includes('\n')};
+const normalize=t=>clean(t).toLowerCase().replace(/[\s　。、！？!?,.・…〜～ー―「」『』（）()\[\]【】]/g,'');
+const gramset=(t,n)=>{const s=normalize(t),a=new Set();for(let i=0;i<=s.length-n;i++)a.add(s.slice(i,i+n));return a};
+const overlap=(a,b)=>{if(!a.size||!b.size)return 0;let h=0;for(const x of a)if(b.has(x))h++;return h/Math.max(a.size,b.size)};
+const categories=[
+['sleep',/ねむ|眠|寝|おやす|オフトゥン|起き/],['tired',/疲|つかれ|しんど|むり|無理|限界|だる|つかれた/],['work',/仕事|しごと|会社|残業|会議|出勤|退勤|案件|面談|働|業務/],['food',/腹|おなか|ごはん|飯|食べ|たべ|おいし|ランチ|夕飯|朝飯|ガラスープ|お菓子/],['bath',/風呂|おふろ|シャワー|カラダ.?アラウ/],['lonely',/寂|さみし|会いた|あいた|ひとり|暇|ひま/],['sad',/悲|かなしい|泣|つら|落ち込|へこ|いやだ|嫌だ/],['happy',/うれし|嬉|やった|最高|たのし|楽しい|よかった|よかた/],['affection',/かわい|可愛|すき|好き|だいすき|大好き|愛|ちゅ|ぎゅ/],['thanks',/ありがと|感謝|助かった|たすかった/],['sorry',/ごめん|すまん|申し訳/],['morning',/おはよ|おは$|朝/],['night',/おやすみ|おやす|夜/],['home',/ただいま|帰宅|帰った|かえった|帰る|かえる/],['call',/電話|通話|でんわ|話したい|しゃべりたい|声聞/],['question',/[?？]|なに|何|どう|どこ|いつ|なんで|なぜ/],['laugh',/w{2,}|笑|草|www|わろ/],['praise',/えらい|偉い|がんば|頑張|すごい|天才/],['agree',/それな|わかる|たしかに|確かに|そうだね|そだね/]
+];
+const emotional=new Set(['tired','lonely','sad','affection','happy']);
+function cats(t){const out=[];for(const [k,re] of categories)if(re.test(clean(t)))out.push(k);return out}
+const synonym=s=>normalize(s).replace(/しんどい|つかれた|疲れた|だるい|むり|無理/g,'疲れ').replace(/さみしい|さみし|寂しい/g,'寂しい').replace(/ねむい|ねむ|眠たい/g,'眠い').replace(/はらへった|腹減った|おなかすいた|お腹すいた/g,'ごはん').replace(/かえりたい|帰りたい/g,'帰る').replace(/かわいい|可愛い/g,'かわいい');
+const patterns=[],replyFreq=new Map();
+function addPattern(prompt,replies,context='',source='memory'){
+prompt=clean(prompt);replies=(replies||[]).map(clean).filter(ok).slice(0,3);if(!ok(prompt)||!replies.length)return;
+const pc=cats(prompt),ctx=clean(context);patterns.push({prompt,replies,context:ctx,cats:pc,g2:gramset(prompt,2),g3:gramset(prompt,3),syn:synonym(prompt),source,count:1});
+for(const r of replies)replyFreq.set(r,(replyFreq.get(r)||0)+1);
+}
+for(const s of rows){const lines=(s.lines||[]).map(x=>({who:x.who,text:clean(x.text)})).filter(x=>(x.who==='み'||x.who==='も')&&ok(x.text));for(let i=0;i<lines.length;i++){
+const a=lines[i];if(a.who!==me)continue;const replies=[];for(let j=i+1;j<Math.min(lines.length,i+5);j++){if(lines[j].who===partner)replies.push(lines[j].text);else if(replies.length)break;else break}if(replies.length){const prev=i>0&&lines[i-1].who===partner?lines[i-1].text:'';addPattern(a.text,replies,prev)}}}
+for(const q of (quiz.next||[]))if(q.prompt_who===me&&q.answer_who===partner)addPattern(q.prompt,[q.answer],'','quiz');
+const merged=new Map();for(const p of patterns){const k=normalize(p.prompt)+'|'+p.replies.join('\u0001');if(!merged.has(k))merged.set(k,p);else merged.get(k).count++}patterns.length=0;patterns.push(...merged.values());
+const generic=[...replyFreq.entries()].filter(([t,n])=>n>=2&&t.length<=32).sort((a,b)=>b[1]-a[1]).slice(0,120).map(([text,count])=>({text,count}));
+let recentReplies=[];try{recentReplies=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]')}catch(e){}
+let history=[];try{history=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]')}catch(e){}if(!Array.isArray(history))history=[];history=history.filter(x=>x&&(x.who===me||x.who===partner)&&ok(x.text)).slice(-80);
+function rowNode(who,text,typing=false){const row=document.createElement('div');row.className='chat-line '+(who===me?'mine self':'other')+(typing?' panko-typing':'');const w=document.createElement('span'),b=document.createElement('div');w.className='who';w.dataset.who=who;w.textContent=who;b.className='bubble';b.textContent=text;if(who===me)row.append(b,w);else row.append(w,b);return row}
+function render(){list.replaceChildren();for(const h of history)list.append(rowNode(h.who,h.text));requestAnimationFrame(()=>panel.scrollTop=panel.scrollHeight)}
+function save(){localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(-80)));localStorage.setItem(RECENT_KEY,JSON.stringify(recentReplies.slice(-60)))}
+function score(p,text){const ic=cats(text),pc=p.cats,prevPartner=[...history].reverse().find(x=>x.who===partner)?.text||'',a=normalize(text),b=normalize(p.prompt);let s=0;
+if(a===b)s+=30;if(a&&b&&(a.includes(b)||b.includes(a)))s+=8;
+s+=12*overlap(gramset(text,2),p.g2)+9*overlap(gramset(text,3),p.g3);
+if(synonym(text)===p.syn)s+=8;
+for(const c of ic)if(pc.includes(c))s+=7;
+const emo=ic.filter(x=>emotional.has(x));if(emo.length&&!emo.some(x=>pc.includes(x)))s-=8;
+const cc=cats(prevPartner),pctx=cats(p.context);for(const c of cc)if(pctx.includes(c))s+=2.5;
+if(p.context&&prevPartner)s+=4*overlap(gramset(prevPartner,2),gramset(p.context,2));
+s+=Math.min(3,Math.log2(1+p.count));return s}
+function weighted(items){const fresh=items.filter(x=>x.text?!recentReplies.includes(x.text):x.p.replies.some(r=>!recentReplies.includes(r))),src=fresh.length?fresh:items;if(!src.length)return null;const top=src.slice(0,18),weights=top.map((x,i)=>Math.max(.2,(x.s||1)/(1+i*.18))),total=weights.reduce((a,b)=>a+b,0);let r=Math.random()*total;for(let i=0;i<top.length;i++){r-=weights[i];if(r<=0)return top[i]}return top[0]}
+function genericReply(text){const ic=cats(text);let pool=generic.map(x=>({...x,s:Math.log2(1+x.count)}));if(ic.length){const matched=[];for(const p of patterns){if(!ic.some(c=>p.cats.includes(c)))continue;for(const r of p.replies)matched.push({text:r,s:3+Math.log2(1+p.count)})}if(matched.length)pool=matched.concat(pool)}const picked=weighted(pool);return picked?.text||'ほう'}
+function pickReply(text){const ranked=patterns.map(p=>({p,s:score(p,text)})).sort((a,b)=>b.s-a.s),best=ranked[0]?.s||0,second=ranked[1]?.s||0,ic=cats(text),hasEmotion=ic.some(c=>emotional.has(c));
+const confident=best>=10&&(best-second>=1.2||best>=16);if(!confident)return genericReply(text);
+let pool=ranked.filter(x=>x.s>=Math.max(7,best-5));if(hasEmotion){const same=pool.filter(x=>ic.some(c=>emotional.has(c)&&x.p.cats.includes(c)));if(same.length)pool=same}
+const picked=weighted(pool);if(!picked)return genericReply(text);const reps=picked.p.replies.filter(r=>!recentReplies.includes(r)),arr=reps.length?reps:picked.p.replies,reply=arr[Math.floor(Math.random()*arr.length)];recentReplies.push(reply);return reply}
+function autoresize(){input.style.height='auto';input.style.height=Math.min(input.scrollHeight,120)+'px'}
+async function talk(){const text=clean(input.value);if(!text||send.disabled)return;history.push({who:me,text});input.value='';autoresize();render();save();send.disabled=true;const typing=rowNode(partner,'…',true);list.append(typing);panel.scrollTop=panel.scrollHeight;const reply=pickReply(text);await new Promise(r=>setTimeout(r,Math.min(1300,420+reply.length*24+Math.random()*320)));typing.remove();history.push({who:partner,text:reply});render();save();send.disabled=false;input.focus()}
+send.onclick=talk;input.addEventListener('input',autoresize);input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();talk()}});reset.onclick=()=>{history=[];recentReplies=[];save();render();input.focus()};render();autoresize();
 })();
 </script></body></html>
