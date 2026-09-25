@@ -1,6 +1,6 @@
 (()=>{
   if(!/\/grow\/?$/.test(location.pathname))return;
-  const VER='20260925-v10-1';
+  const VER='20260925-v10-2';
   const fallback=()=>{console.warn('われわれ育成所v10の読み込みに失敗');};
   (async()=>{
     try{
