@@ -44,7 +44,7 @@
   style.textContent='.grow-shell,.app-title{display:none!important}#speechNote{display:none!important}.mini-panel:has(#history){display:none!important}.needs>.need:not(.ux-need){visibility:hidden!important}';
   document.head.append(style);
   const s=document.createElement('script');
-  s.src='./ux-v9.js?v=20260925-4';
+  s.src='./ux-v9.js?v=20260925-10';
   s.defer=true;
   s.onload=()=>{
     const f=document.createElement('script');f.src='./mobile-fix.js?v=20260925-5';f.defer=true;document.head.append(f);
