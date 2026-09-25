@@ -37,21 +37,3 @@
   function findSceneForQuiz(rows,item,contextPack=null){if(!item)return null;const contextRows=contextPack?.scenes||[],key=quizKey(item),mappedId=contextPack?.map?.[key]??contextPack?.map?.[key+'|'];if(mappedId!=null){const mapped=contextRows.find(x=>String(x.id)===String(mappedId));if(mapped)return mapped}if(item.scene_id!=null){const exact=[...contextRows,...(rows||[])].find(x=>String(x.id)===String(item.scene_id));if(exact)return exact}const sameDay=(rows||[]).filter(x=>!item.date||x.date===item.date),targets=item.type==='next'?[item.prompt,item.answer].filter(Boolean):[item.quote].filter(Boolean);let best=null,bestScore=0;for(const scene of sameDay){const texts=(scene.lines||[]).map(x=>String(x.text||''));let score=0;for(const target of targets){if(texts.includes(target))score+=3;else if(texts.some(t=>t.includes(target)||target.includes(t)))score+=1}if(score>bestScore){best=scene;bestScore=score}}return bestScore?best:null}
   window.WareraData={core,memories,expandedMemories,expandedQuiz,expandedAnalytics,quizScenePack,quizKey,readableScene,findSceneForQuiz};
 })();
-
-(()=>{
-  if(!/\/grow\/?$/.test(location.pathname))return;
-  const PREFIX='warera_grow_v1_',DB='warera-grow',STORE='pets',HATCH_AT=9;
-  const today=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
-  const yesterday=()=>{const d=new Date();d.setDate(d.getDate()-1);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
-  function growKey(){let viewer='み';try{if(localStorage.getItem('warera_chat_perspective')==='も')viewer='も'}catch(e){}const target=viewer==='み'?'も':'み';return`${PREFIX}${viewer}_${target}`}
-  function getState(){try{return JSON.parse(localStorage.getItem(growKey())||'null')}catch(e){return null}}
-  function removeGrowthLog(){document.querySelectorAll('.mini-panel h2').forEach(h=>{if(h.textContent.trim()==='成長記録')h.closest('.mini-panel')?.remove()})}
-  function keepPickedDate(){const s=getState(),el=document.getElementById('bornDate');if(s?.pickedDate&&el){const v=s.pickedDate.replaceAll('-','/');if(el.textContent!==v)el.textContent=v}}
-  async function putDb(s){return new Promise(resolve=>{try{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE,{keyPath:'id'})};r.onerror=()=>resolve(false);r.onsuccess=()=>{const db=r.result;try{const q=db.transaction(STORE,'readwrite').objectStore(STORE).put(s);q.onsuccess=()=>{db.close();resolve(true)};q.onerror=()=>{db.close();resolve(false)}}catch(e){db.close();resolve(false)}}}catch(e){resolve(false)}})}
-  let hatching=false;
-  async function hatchIfReady(){if(hatching)return;const s=getState();if(!s||Number(s.totalCare||0)<HATCH_AT)return;const stage=document.getElementById('stageLabel')?.textContent?.trim();if(stage&&stage!=='たまご')return;hatching=true;if(!s.pickedDate)s.pickedDate=s.born||today();s.growthXP=Math.max(70,Number(s.growthXP||0));if(!s.born||s.born===today())s.born=yesterday();try{localStorage.setItem(growKey(),JSON.stringify(s))}catch(e){}await putDb(s);setTimeout(()=>location.reload(),80)}
-  function tidy(){removeGrowthLog();keepPickedDate();hatchIfReady()}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tidy,{once:true});else tidy();
-  new MutationObserver(()=>{removeGrowthLog();keepPickedDate()}).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
-  setInterval(tidy,700);
-})();
