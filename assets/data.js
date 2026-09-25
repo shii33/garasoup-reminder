@@ -41,10 +41,10 @@
 (()=>{
   if(!/\/grow\/?$/.test(location.pathname))return;
   const style=document.createElement('style');
-  style.textContent='.grow-shell,.app-title{display:none!important}#speechNote{display:none!important}.mini-panel:has(#history){display:none!important}.needs>.need:not(.ux-need){visibility:hidden!important}';
+  style.textContent='.grow-shell,.app-title{display:none!important}#speechNote{display:none!important}.mini-panel:has(#history){display:none!important}.needs>.need:not(.ux-need){visibility:hidden!important}@media(min-width:721px){#g10{width:min(1120px,calc(100vw - 32px))!important;max-width:none!important;position:relative!important;left:50%!important;transform:translateX(-50%)!important}.g10grid{display:grid!important;grid-template-columns:minmax(0,2.75fr) minmax(270px,.78fr)!important;grid-template-rows:auto auto!important}.g10left{grid-column:1!important;grid-row:1!important}.g10right{grid-column:2!important;grid-row:1!important}.g10dock{grid-column:1/-1!important;grid-row:2!important}}';
   document.head.append(style);
   const s=document.createElement('script');
-  s.src='./ux-v6.js?v=20260925-6';
+  s.src='./ux-v6.js?v=20260925-7';
   s.defer=true;
   document.head.append(s);
 })();
