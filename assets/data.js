@@ -37,17 +37,3 @@
   function findSceneForQuiz(rows,item,contextPack=null){if(!item)return null;const contextRows=contextPack?.scenes||[],key=quizKey(item),mappedId=contextPack?.map?.[key]??contextPack?.map?.[key+'|'];if(mappedId!=null){const mapped=contextRows.find(x=>String(x.id)===String(mappedId));if(mapped)return mapped}if(item.scene_id!=null){const exact=[...contextRows,...(rows||[])].find(x=>String(x.id)===String(item.scene_id));if(exact)return exact}const sameDay=(rows||[]).filter(x=>!item.date||x.date===item.date),targets=item.type==='next'?[item.prompt,item.answer].filter(Boolean):[item.quote].filter(Boolean);let best=null,bestScore=0;for(const scene of sameDay){const texts=(scene.lines||[]).map(x=>String(x.text||''));let score=0;for(const target of targets){if(texts.includes(target))score+=3;else if(texts.some(t=>t.includes(target)||target.includes(t)))score+=1}if(score>bestScore){best=scene;bestScore=score}}return bestScore?best:null}
   window.WareraData={core,memories,expandedMemories,expandedQuiz,expandedAnalytics,quizScenePack,quizKey,readableScene,findSceneForQuiz};
 })();
-
-(()=>{
-  if(!/\/grow\/?$/.test(location.pathname))return;
-  const eggButtons=[['warm','🫶','たまごをあたためる'],['talkEgg','🗣️','声をかける'],['rock','🤲','そっとゆらす'],['storyEgg','📖','昔話をする'],['callName','📣','名前を呼ぶ'],['listen','👂','耳をすます']];
-  function ensureEggActions(){
-    const grid=document.getElementById('actionGrid'),pet=document.getElementById('pet'),note=document.getElementById('actionNote');
-    if(!grid||grid.children.length||!pet?.classList.contains('stage-egg'))return;
-    for(const [action,icon,label] of eggButtons){const b=document.createElement('button');b.className='press-btn care-btn';b.dataset.action=action;b.innerHTML=`<span class="emoji">${icon}</span><span class="label">${label}</span>`;grid.append(b)}
-    if(note)note.textContent='たまごのうちは、できることもたまご仕様。耳をすますのは何回でもできます。';
-  }
-  ensureEggActions();
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensureEggActions,{once:true});
-  setTimeout(ensureEggActions,120);setTimeout(ensureEggActions,700);
-})();
