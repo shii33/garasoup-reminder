@@ -44,8 +44,8 @@
   style.textContent='.grow-shell,.app-title{display:none!important}#speechNote{display:none!important}.mini-panel:has(#history){display:none!important}.needs>.need:not(.ux-need){visibility:hidden!important}';
   document.head.append(style);
   const s=document.createElement('script');
-  s.src='./ux-v7.js?v=20260925-2';
+  s.src='./ux-v8.js?v=20260925-1';
   s.defer=true;
-  s.onload=()=>{const f=document.createElement('script');f.src='./mobile-fix.js?v=20260925-1';f.defer=true;document.head.append(f)};
+  s.onload=()=>{const f=document.createElement('script');f.src='./mobile-fix.js?v=20260925-3';f.defer=true;document.head.append(f)};
   document.head.append(s);
 })();
