@@ -53,7 +53,7 @@
   }
   if(!document.querySelector('script[data-grow-share-current]')){
     const s=document.createElement('script');
-    s.src='./share-current.js?v=20260925-1';
+    s.src='./share-current.js?v=20260925-2';
     s.defer=true;
     s.dataset.growShareCurrent='1';
     document.head.append(s);
