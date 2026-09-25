@@ -33,21 +33,45 @@
       );
 
       replace(
-        "function decay(){const h=Math.min(72,Math.max(0,(now()-S.lastTick)/36e5));if(h<.02)return;const r=rates();S.needs.hunger=clamp(S.needs.hunger-h*r.hunger);S.needs.sleep=clamp(S.needs.sleep+h*(isAsleep()?1:-r.sleep));S.needs.mood=clamp(S.needs.mood-h*r.mood);S.needs.bond=clamp(S.needs.bond-h*r.bond);S.needs.clean=clamp(S.needs.clean-h*r.clean);S.toiletMeter+=h*1.8;while(S.toiletMeter>=100&&S.poop<2){S.toiletMeter-=100;S.poop++;S.needs.clean=clamp(S.needs.clean-14)}if(h>=4&&Object.values(lv()).some(v=>v<15))S.careMistakes++;S.lastTick=now()}",
-        "function decay(){const h=Math.min(72,Math.max(0,(now()-S.lastTick)/36e5));if(h<.02)return;const r=rates(),sleeping=isAsleep(),slow=sleeping?.22:1;S.needs.hunger=clamp(S.needs.hunger-h*r.hunger*slow);S.needs.sleep=clamp(S.needs.sleep+h*(sleeping?2.2:-r.sleep));S.needs.mood=clamp(S.needs.mood-h*r.mood*slow);S.needs.bond=clamp(S.needs.bond-h*r.bond*slow);S.needs.clean=clamp(S.needs.clean-h*r.clean*slow);S.toiletMeter+=h*1.8*slow;while(S.toiletMeter>=100&&S.poop<2){S.toiletMeter-=100;S.poop++;S.needs.clean=clamp(S.needs.clean-14)}if(!sleeping&&h>=4&&Object.values(lv()).some(v=>v<15))S.careMistakes++;S.lastTick=now()}",
-        '睡眠中の減衰'
+        "function rates(){const st=stage()[0];if(st==='adult'){if(S.personality==='dere')return{hunger:1.45,sleep:1,mood:.75,bond:.55,clean:.3};if(S.personality==='aloof')return{hunger:1.55,sleep:1,mood:.32,bond:.18,clean:.35};return{hunger:1.5,sleep:1,mood:.52,bond:.33,clean:.3}}if(st==='child'&&S.childType==='affection')return{hunger:1.5,sleep:1,mood:.62,bond:.42,clean:.3};return{hunger:1.5,sleep:1,mood:.48,bond:.28,clean:.3}}",
+        "function rates(){const st=stage()[0];if(st==='adult'){if(S.personality==='dere')return{hunger:12,sleep:8,mood:10,bond:8,clean:5.5};if(S.personality==='aloof')return{hunger:12.5,sleep:7.5,mood:6.5,bond:4.5,clean:5};return{hunger:12,sleep:8,mood:8,bond:6,clean:5.5}}if(st==='child'&&S.childType==='affection')return{hunger:12,sleep:8,mood:9,bond:7,clean:5.5};return{hunger:12,sleep:8,mood:8,bond:6,clean:5.5}}",
+        '起きている間の減り方'
       );
 
       replace(
         "function isAsleep(){return now()<Number(S.sleepUntil||0)}",
-        "function isAsleep(){return now()<Number(S.sleepUntil||0)}\nfunction syncNightSleep(){if(stage()[0]==='egg')return;const d=new Date(),h=d.getHours();if(h>=23||h<7){const wake=new Date(d);if(h>=23)wake.setDate(wake.getDate()+1);wake.setHours(7,0,0,0);S.sleepUntil=Math.max(Number(S.sleepUntil||0),wake.getTime())}else if(Number(S.sleepUntil||0)<=now())S.sleepUntil=0}",
-        '夜間自動睡眠'
+        "function isAsleep(){return now()<Number(S.sleepUntil||0)}\nfunction canSleepNow(){const h=new Date().getHours();return h>=21||h<9}\nfunction canWakeNow(){const h=new Date().getHours();return h>=7&&h<9}\nfunction nextNine(){const d=new Date();if(d.getHours()>=9)d.setDate(d.getDate()+1);d.setHours(9,0,0,0);return d.getTime()}\nfunction syncNightSleep(){if(stage()[0]==='egg')return;const d=new Date(),h=d.getHours(),wake=new Date(d);wake.setHours(9,0,0,0);if(h<7){S.sleepUntil=Math.max(Number(S.sleepUntil||0),wake.getTime());S.morningWakeDate=''}else if(h<9){if(S.morningWakeDate!==today())S.sleepUntil=Math.max(Number(S.sleepUntil||0),wake.getTime());else S.sleepUntil=0}else if(Number(S.sleepUntil||0)<=now())S.sleepUntil=0}\nfunction sleepSplit(start,end){let sleep=0,awake=0;const step=15*60*1000;for(let t=start;t<end;t+=step){const n=Math.min(end,t+step),mid=(t+n)/2,d=new Date(mid),forced=d.getHours()<7,manual=mid<Number(S.sleepUntil||0);(forced||manual?sleep:awake)+=(n-t)/36e5}return{sleep,awake}}",
+        '睡眠時間帯'
+      );
+
+      replace(
+        "function decay(){const h=Math.min(72,Math.max(0,(now()-S.lastTick)/36e5));if(h<.02)return;const r=rates();S.needs.hunger=clamp(S.needs.hunger-h*r.hunger);S.needs.sleep=clamp(S.needs.sleep+h*(isAsleep()?1:-r.sleep));S.needs.mood=clamp(S.needs.mood-h*r.mood);S.needs.bond=clamp(S.needs.bond-h*r.bond);S.needs.clean=clamp(S.needs.clean-h*r.clean);S.toiletMeter+=h*1.8;while(S.toiletMeter>=100&&S.poop<2){S.toiletMeter-=100;S.poop++;S.needs.clean=clamp(S.needs.clean-14)}if(h>=4&&Object.values(lv()).some(v=>v<15))S.careMistakes++;S.lastTick=now()}",
+        "function decay(){const end=now(),span=Math.min(72*36e5,Math.max(0,end-S.lastTick));if(span<.02*36e5)return;const start=end-span,r=rates(),seg=sleepSplit(start,end),slow=.30;S.needs.hunger=clamp(S.needs.hunger-r.hunger*(seg.awake+seg.sleep*slow));S.needs.sleep=clamp(S.needs.sleep-r.sleep*seg.awake+10*seg.sleep);S.needs.mood=clamp(S.needs.mood-r.mood*(seg.awake+seg.sleep*slow));S.needs.bond=clamp(S.needs.bond-r.bond*(seg.awake+seg.sleep*slow));S.needs.clean=clamp(S.needs.clean-r.clean*(seg.awake+seg.sleep*slow));S.toiletMeter+=1.8*(seg.awake+seg.sleep*slow);while(S.toiletMeter>=100&&S.poop<2){S.toiletMeter-=100;S.poop++;S.needs.clean=clamp(S.needs.clean-14)}if(seg.awake>=4&&Object.values(lv()).some(v=>v<15))S.careMistakes++;S.lastTick=end}",
+        '睡眠込みのゲージ減衰'
       );
 
       replace(
         "function render(){decay();resolveEvolution();",
         "function render(){syncNightSleep();decay();resolveEvolution();",
         '夜間睡眠反映'
+      );
+
+      replace(
+        "sleep:[isAsleep()?'☀️':'🌙',isAsleep()?'起こす':'ねる',isAsleep()?'そろそろ起きる':'オフトゥンへ']",
+        "sleep:[isAsleep()?(canWakeNow()?'☀️':'😴'):'🌙',isAsleep()?(canWakeNow()?'起こす':'ねてる'):'ねる',isAsleep()?(canWakeNow()?'起こしてあげる':'朝までおやすみ'):(canSleepNow()?'オフトゥンへ':'21時から')]",
+        '睡眠ボタン表示'
+      );
+
+      replace(
+        "if(a==='sleep'&&wasSleep){S.sleepUntil=0;S.lastSpeech=personaLine('wake');S.lastGrowthGain=0;S.lastAction='wake';await save();render();setPet('stand_front.png',900);fx('wake');return}const q=quality(a),gain=growthFor(a,q);profileCare(a,q);",
+        "if(a==='sleep'&&wasSleep){if(!canWakeNow()){S.lastSpeech='朝7時までは起きない。';S.lastGrowthGain=0;await save();render();return}S.sleepUntil=0;S.morningWakeDate=today();S.lastSpeech=personaLine('wake');S.lastGrowthGain=0;S.lastAction='wake';await save();render();setPet('stand_front.png',900);fx('wake');return}const q=quality(a);if(a==='sleep'&&!canSleepNow()){S.lastSpeech='21時になったらねる。';S.lastGrowthGain=0;await save();render();return}const gain=growthFor(a,q);profileCare(a,q);",
+        '手動睡眠と起床制御'
+      );
+
+      replace(
+        "if(a==='sleep'){if(q===0){S.lastSpeech='まだねない。';S.careMistakes++;}else{S.sleepUntil=now()+90*60*1000;n.sleep+=q===3?48:36;S.lastSpeech=personaLine('sleep')}}",
+        "if(a==='sleep'){S.morningWakeDate='';S.sleepUntil=nextNine();n.sleep+=q===3?32:q===2?24:16;S.lastSpeech=personaLine('sleep')}",
+        '手動睡眠時間'
       );
 
       replace(
