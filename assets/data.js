@@ -46,6 +46,6 @@
   const s=document.createElement('script');
   s.src='./ux-v8.js?v=20260925-1';
   s.defer=true;
-  s.onload=()=>{const f=document.createElement('script');f.src='./mobile-fix.js?v=20260925-3';f.defer=true;document.head.append(f)};
+  s.onload=()=>{const f=document.createElement('script');f.src='./mobile-fix.js?v=20260925-4';f.defer=true;document.head.append(f)};
   document.head.append(s);
 })();
