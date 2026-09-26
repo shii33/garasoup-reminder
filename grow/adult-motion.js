@@ -107,16 +107,14 @@
 
       const result=await originalAct(a);
 
-      if(a==='feed'&&existingPoopDue){
+      if(a==='feed'){
         try{
           if(typeof S!=='undefined'&&S&&!S.poop){
-            const currentDue=Number(S.poopDueAt||0);
-            if(!currentDue||currentDue>existingPoopDue){
-              S.poopDueAt=existingPoopDue;
-              if(typeof save==='function')await save();
-            }
+            const fasterDue=Date.now()+(45+Math.random()*75)*60000;
+            S.poopDueAt=existingPoopDue?Math.min(existingPoopDue,fasterDue):fasterDue;
+            if(typeof save==='function')await save();
           }
-        }catch(e){console.warn('grow poop schedule preserve failed',e)}
+        }catch(e){console.warn('grow poop schedule adjust failed',e)}
       }
       return result;
     };
