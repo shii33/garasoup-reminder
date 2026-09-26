@@ -13,6 +13,9 @@
     background-image:url('./assets/room/room-night.jpg')!important;
   }
   .g11room:before,.g11room:after,.g11bed,.g11shelf{display:none!important;content:none!important}
+  #g12 .g12about p{font-size:10px!important;font-weight:800!important;line-height:1.55!important}
+  #g12 .g12about p>b{display:block!important;margin:0 0 3px!important;color:#777!important;font-size:7px!important;font-weight:800!important;line-height:1.3!important}
+  #g12 .g12about p small{color:#888!important;font-size:7px!important;font-weight:700!important}
   @media(max-width:720px){
     #g11{position:static!important;left:auto!important;transform:none!important;width:100%!important;max-width:100%!important;margin:0 auto!important;box-sizing:border-box!important}
     .g11w{width:100%!important;box-sizing:border-box!important}
