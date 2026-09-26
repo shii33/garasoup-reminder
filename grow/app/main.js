@@ -1,9 +1,9 @@
-import './data-service.js?v=20260926-life-3';
-import {GrowModel,getViewer} from './core.js?v=20260926-life-3';
-import {CreatureLife} from './life.js?v=20260926-life-3';
-import {SourceLog} from './source-log.js?v=20260926-life-3';
-import {GrowView} from './view.js?v=20260926-life-3';
-import {ShareService} from './share.js?v=20260926-life-3';
+import './data-service.js?v=20260926-life-4';
+import {GrowModel,getViewer} from './core.js?v=20260926-life-4';
+import {CreatureLife} from './life.js?v=20260926-life-4';
+import {SourceLog} from './source-log.js?v=20260926-life-4';
+import {GrowView} from './view.js?v=20260926-life-4';
+import {ShareService} from './share.js?v=20260926-life-4';
 
 let model=null,life=null,view=null;
 const sourceLog=new SourceLog();
@@ -13,9 +13,8 @@ let idleTimer=0,heartbeatTimer=0,perspectiveTimer=0;
 const rand=(min,max)=>min+Math.random()*(max-min);
 const emptyCorpus=()=>({pools:{},sceneMap:new Map(),tokens:[],count:0});
 const timeout=(ms,value=null)=>new Promise(resolve=>setTimeout(()=>resolve(value),ms));
-const reactionMs=()=>model?.stageKey()==='adult'?6000:1250;
 
-function scheduleIdle(min=6500,max=15000){
+function scheduleIdle(min=7000,max=10000){
   clearTimeout(idleTimer);
   idleTimer=setTimeout(async()=>{
     if(!model||!life||!view)return scheduleIdle();
@@ -30,7 +29,7 @@ function scheduleIdle(min=6500,max=15000){
   },rand(min,max))
 }
 function noteInteraction(){life?.noteInteraction();clearTimeout(idleTimer)}
-function settleAfterReaction(){const ms=reactionMs()+40;scheduleIdle(ms,ms)}
+function settleAfterReaction(){scheduleIdle(7000,10000)}
 
 async function loadModelFast(viewer){
   const next=new GrowModel(viewer);let initial=next.readLocal();
@@ -75,7 +74,7 @@ function bind(){
     const care=e.target.closest('#g12actions [data-a],#g12actions [data-e]');if(care){e.preventDefault();await handleCare(care);return}
     if(e.target.closest('#g12like')){const item=await life.saveCurrentSpeech();if(item){view.showIdleFx('💘');await view.render({preservePet:true});share.schedule(350)}return}
     if(e.target.closest('#g12share')){e.preventDefault();e.stopPropagation();await share.openNative();return}
-    if(e.target.closest('#g12farewell')){if(!confirm(`${model.target==='み'?'みちゃこ':'もっち'}とお別れします。\nこの端末の育成データは消えて、たまごから育て直しになります。いい？`))return;await model.remove();view.closeModal();await switchModel(model.viewer);scheduleIdle(5000,9000);return}
+    if(e.target.closest('#g12farewell')){if(!confirm(`${model.target==='み'?'みちゃこ':'もっち'}とお別れします。\nこの端末の育成データは消えて、たまごから育て直しになります。いい？`))return;await model.remove();view.closeModal();await switchModel(model.viewer);scheduleIdle();return}
   })
 }
 
@@ -83,7 +82,7 @@ async function heartbeat(){if(!model||!view||!life)return;const wasPoop=!!model.
 
 function showBootError(error){console.error('われわれ育成所の起動に失敗',error);const host=document.querySelector('.conversation-shell')||document.body;document.getElementById('growLoading')?.remove();let p=document.querySelector('.grow-boot-error');if(!p){p=document.createElement('p');p.className='grow-boot-error';host.append(p)}p.textContent=`育成所を読み込めなかった：${error?.message||error||'unknown error'}`}
 
-async function boot(){try{window.wireLock?.('../');await switchModel(getViewer());bind();share.bind();sourceLog.load();scheduleIdle(5000,10000);heartbeatTimer=setInterval(heartbeat,20000);perspectiveTimer=setInterval(async()=>{const v=getViewer();if(model&&v!==model.viewer){view.closeModal();await switchModel(v);scheduleIdle(5000,10000)}},2000)}catch(e){showBootError(e)}}
+async function boot(){try{window.wireLock?.('../');await switchModel(getViewer());bind();share.bind();sourceLog.load();scheduleIdle();heartbeatTimer=setInterval(heartbeat,20000);perspectiveTimer=setInterval(async()=>{const v=getViewer();if(model&&v!==model.viewer){view.closeModal();await switchModel(v);scheduleIdle()}},2000)}catch(e){showBootError(e)}}
 
 window.addEventListener('error',e=>{if(!document.getElementById('g12'))showBootError(e.error||e.message)});
 window.addEventListener('unhandledrejection',e=>{if(!document.getElementById('g12'))showBootError(e.reason)});
