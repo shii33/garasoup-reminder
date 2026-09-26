@@ -70,9 +70,10 @@
       scrollY:-window.scrollY
     });
 
-    const pad=Math.round(card.width*.035);
-    const radius=Math.round(card.width*.035);
-    const shadow=Math.max(4,Math.round(card.width*.012));
+    const pad=Math.max(34,Math.round(card.width*.06));
+    const radius=Math.max(28,Math.round(card.width*.038));
+    const shadow=Math.max(10,Math.round(card.width*.016));
+    const border=Math.max(2,Math.round(card.width*.003));
     const out=document.createElement('canvas');
     out.width=card.width+pad*2+shadow;
     out.height=card.height+pad*2+shadow;
@@ -97,6 +98,13 @@
     g.drawImage(card,x,y);
     g.restore();
 
+    g.save();
+    g.strokeStyle='#111';
+    g.lineWidth=border;
+    roundRect(g,x+border/2,y+border/2,card.width-border,card.height-border,Math.max(2,radius-border/2));
+    g.stroke();
+    g.restore();
+
     return new Promise((resolve,reject)=>out.toBlob(b=>b?resolve(b):reject(new Error('画像を作れなかった')),'image/png'));
   }
 
@@ -108,12 +116,19 @@
     const date=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     const file=new File([blob],`warera-pet-${t}-${date}.png`,{type:'image/png'});
 
-    if(navigator.share&&navigator.canShare?.({files:[file]})){
-      try{await navigator.share({files:[file]});return}catch(e){if(e?.name==='AbortError')return}
+    if(navigator.share){
+      const canShareFiles=!navigator.canShare||navigator.canShare({files:[file]});
+      if(canShareFiles){
+        try{
+          await navigator.share({files:[file],title:'われわれ育成所'});
+          return;
+        }catch(e){
+          if(e?.name==='AbortError')return;
+          console.warn('native share failed',e);
+        }
+      }
     }
-    if(navigator.clipboard&&window.ClipboardItem){
-      try{await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);alert('画像をコピーしたよ');return}catch(e){}
-    }
+
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
     a.download=file.name;
