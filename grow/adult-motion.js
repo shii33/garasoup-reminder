@@ -10,91 +10,30 @@
     'adult_left.png','adult_right.png','adult_front.png'
   ]);
 
-  function isAdult(){
-    return !!document.getElementById('g12stage')?.textContent?.includes('おとな');
-  }
-
-  let domLockSrc='';
-  let domLockUntil=0;
-  let restoring=false;
-
-  function domLockActive(){
-    if(!domLockSrc)return false;
-    if(Date.now()>=domLockUntil){
-      domLockSrc='';
-      domLockUntil=0;
-      return false;
-    }
-    return true;
-  }
-
-  function releaseDomLock(){
-    domLockSrc='';
-    domLockUntil=0;
-  }
-
-  function restoreLockedPet(){
-    if(restoring||!domLockActive())return;
-    const img=document.getElementById('g12pet');
-    if(!img||img.src===domLockSrc)return;
-    restoring=true;
-    img.src=domLockSrc;
-    queueMicrotask(()=>{restoring=false});
-  }
-
-  function lockVisiblePet(){
-    if(!isAdult())return;
-    const img=document.getElementById('g12pet');
-    if(!img?.src)return;
-    domLockSrc=img.src;
-    domLockUntil=Date.now()+HOLD_MS;
-    restoreLockedPet();
-  }
-
-  document.addEventListener('click',e=>{
-    const b=e.target.closest?.('#g12actions [data-a]');
-    if(!b||b.disabled||!isAdult())return;
-    releaseDomLock();
-    window.__wareraAdultMotionReleaseHold?.();
-    setTimeout(lockVisiblePet,80);
-    setTimeout(lockVisiblePet,220);
-  },true);
-
-  const domObserver=new MutationObserver(mutations=>{
-    if(!domLockActive())return;
-    for(const m of mutations){
-      if(m.type==='attributes'&&m.target?.id==='g12pet'&&m.attributeName==='src'){
-        restoreLockedPet();
-        break;
-      }
-    }
-  });
-  domObserver.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['src']});
-  setInterval(()=>{if(domLockActive())restoreLockedPet()},250);
+  const isAdult=()=>document.getElementById('g12stage')?.textContent?.includes('おとな')||false;
 
   function install(){
     if(window.__wareraAdultMotionInstalled)return true;
     if(typeof window.reactionPet!=='function'||typeof window.setPet!=='function'||typeof window.idleOptions!=='function'||typeof window.currentPet!=='function'||typeof window.act!=='function')return false;
 
-    const originalReaction=window.reactionPet;
-    const originalSetPet=window.setPet;
-    const originalIdleOptions=window.idleOptions;
-    const originalCurrentPet=window.currentPet;
-    const originalAct=window.act;
+    const original={
+      reactionPet:window.reactionPet,
+      setPet:window.setPet,
+      idleOptions:window.idleOptions,
+      currentPet:window.currentPet,
+      act:window.act
+    };
     let heldFile='';
     let heldUntil=0;
 
-    function releaseHold(){
-      heldFile='';
-      heldUntil=0;
-    }
-    window.__wareraAdultMotionReleaseHold=releaseHold;
-
+    function releaseHold(){heldFile='';heldUntil=0}
     function holdActive(){
       if(!heldFile)return false;
       if(Date.now()>=heldUntil){releaseHold();return false}
       return true;
     }
+
+    window.__wareraAdultMotionReleaseHold=releaseHold;
 
     window.act=async function(a){
       let existingPoopDue=0;
@@ -105,7 +44,7 @@
         }
       }catch(e){}
 
-      const result=await originalAct(a);
+      const result=await original.act(a);
 
       if(a==='feed'){
         try{
@@ -120,7 +59,7 @@
     };
 
     window.reactionPet=function(a,repeat,rare){
-      if(!isAdult())return originalReaction(a,repeat,rare);
+      if(!isAdult())return original.reactionPet(a,repeat,rare);
       const r=Math.random();
       if(a==='feed'){
         if(repeat>=4)return r<.55?'adult_pout.png':'adult_troubled.png';
@@ -143,31 +82,27 @@
         return r<.55?'adult_cheer.png':r<.78?'adult_front.png':r<.89?'adult_left.png':'adult_right.png';
       }
       if(a==='sleep')return'adult_sleep.png';
-      return originalReaction(a,repeat,rare);
+      return original.reactionPet(a,repeat,rare);
     };
 
     window.setPet=function(file,ms=0,anim=''){
-      const adult=isAdult();
       const timed=Number(ms)||0;
-      if(adult&&timed>0&&HOLD_FILES.has(file)){
+      if(isAdult()&&timed>0&&HOLD_FILES.has(file)){
         heldFile=file;
         heldUntil=Date.now()+HOLD_MS;
-        return originalSetPet(file,HOLD_MS,anim);
+        return original.setPet(file,HOLD_MS,anim);
       }
-      if(adult&&holdActive()&&file!==heldFile){
-        return originalSetPet(heldFile,0,'');
-      }
-      return originalSetPet(file,ms,anim);
+      if(isAdult()&&holdActive()&&file!==heldFile)return original.setPet(heldFile,0,'');
+      return original.setPet(file,ms,anim);
     };
 
     window.currentPet=function(){
-      if(isAdult()&&holdActive())return heldFile;
-      return originalCurrentPet();
+      return isAdult()&&holdActive()?heldFile:original.currentPet();
     };
 
     window.idleOptions=function(){
       if(isAdult()&&holdActive())return[{f:heldFile,a:'idle-breathe',w:1,fx:''}];
-      const base=originalIdleOptions();
+      const base=original.idleOptions();
       if(!isAdult()||!Array.isArray(base))return base;
       const extra=[
         {f:'adult_phone.png',a:'idle-breathe',w:4.5,fx:''},
@@ -195,8 +130,7 @@
 
   let tries=0;
   const timer=setInterval(()=>{
-    tries++;
-    if(install()||tries>=80)clearInterval(timer);
+    if(install()||++tries>=80)clearInterval(timer);
   },250);
   setTimeout(install,0);
 })();
