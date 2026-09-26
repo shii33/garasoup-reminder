@@ -6,8 +6,16 @@
   function getViewer(){try{return localStorage.getItem('warera_chat_perspective')==='も'?'も':'み'}catch(e){return'み'}}
   function getState(){try{const v=getViewer(),t=v==='み'?'も':'み';return JSON.parse(localStorage.getItem(`${KEY}${v}_${t}`)||'null')}catch(e){return null}}
   function mins(ts){return ts?Math.max(0,(Date.now()-Number(ts))/60000):9999}
+
+  let statusTick=1,nextChangeAt=0,lastSignature='';
+  function schedule(){nextChangeAt=Date.now()+120000+Math.random()*120000}
+  function signature(st,stage){
+    const last=st?.lastActionAt||{},recent=Object.entries(last).map(([k,v])=>[k,mins(v)]).sort((a,b)=>a[1]-b[1])[0]||['',9999];
+    return [stage,!!st?.poop,Number(st?.manualSleepUntil||0)>Date.now(),recent[0],Math.floor(recent[1]/8),Math.floor(new Date().getHours()/3)].join('|');
+  }
+
   function text(){
-    const st=getState(),stage=document.getElementById('g12stage')?.textContent||'',h=new Date().getHours(),bucket=Math.floor(Date.now()/600000),seed=hash(`${bucket}|${st?.totalCare||0}|${stage}`);
+    const st=getState(),stage=document.getElementById('g12stage')?.textContent||'',h=new Date().getHours(),seed=hash(`${statusTick}|${st?.totalCare||0}|${stage}`);
     if(stage.includes('たまご'))return pick(['🥚 中でなんかやってる','🥚 たまにぴくっとする','🥚 しずか。たぶん元気','🥚 なんかコトコトしてる','🥚 さっきより気配ある'],seed);
     if(!st)return pick(['👀 こっち見てる','✨ なんかごきげん','… ひとりでしょもしょもしてる','📱 なんかしてる','☀️ ふつうに過ごしてる'],seed);
     const last=st.lastActionAt||{},recent=Object.entries(last).map(([k,v])=>[k,mins(v)]).sort((a,b)=>a[1]-b[1])[0]||['',9999],a=recent[0],m=recent[1];
@@ -27,7 +35,24 @@
     if((t.playful||0)>6)return pick(['🎮 なんか企んでそう','👀 ちょっかい待ちの顔してる','✨ ちょっと落ち着きない','🎮 まだ遊べそう','… なんかやりたそう'],seed);
     return pick(['👀 さっきからこっち見てる','✨ なんか機嫌いい','… ひとりでしょもしょもしてる','📱 なんか触ってる','☀️ ふつうに過ごしてる','… ぼーっとしてる','👀 たまにこっち見る','✨ 今日はわりと元気','… なんでもない顔してる','📱 ちょっと暇そう'],seed);
   }
-  function update(){const el=document.getElementById('g12status');if(!el)return;const t=text();if(el.textContent!==t)el.textContent=t}
-  document.addEventListener('click',e=>{if(e.target.closest?.('[data-a],[data-e]'))setTimeout(update,120)});
-  setInterval(update,20000);setTimeout(update,0);setTimeout(update,500);setTimeout(update,1500);
+
+  function update(force=false){
+    const el=document.getElementById('g12status');if(!el)return;
+    const st=getState(),stage=document.getElementById('g12stage')?.textContent||'',sig=signature(st,stage);
+    if(!force&&sig===lastSignature&&Date.now()<nextChangeAt)return;
+    lastSignature=sig;
+    const prev=el.textContent;
+    let t='';
+    for(let i=0;i<5;i++){
+      statusTick++;
+      t=text();
+      if(t!==prev)break;
+    }
+    if(t&&el.textContent!==t)el.textContent=t;
+    schedule();
+  }
+
+  document.addEventListener('click',e=>{if(e.target.closest?.('[data-a],[data-e]'))setTimeout(()=>update(true),120)});
+  setInterval(()=>update(false),20000);
+  setTimeout(()=>update(true),0);setTimeout(()=>update(false),500);setTimeout(()=>update(false),1500);
 })();
