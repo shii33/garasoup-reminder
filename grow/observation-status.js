@@ -7,7 +7,7 @@
   function getState(){try{const v=getViewer(),t=v==='み'?'も':'み';return JSON.parse(localStorage.getItem(`${KEY}${v}_${t}`)||'null')}catch(e){return null}}
   function mins(ts){return ts?Math.max(0,(Date.now()-Number(ts))/60000):9999}
 
-  let statusTick=1,nextChangeAt=0,lastSignature='';
+  let statusTick=1,nextChangeAt=0,lastSignature='',currentObservation='';
   function schedule(){nextChangeAt=Date.now()+120000+Math.random()*120000}
   function signature(st,stage){
     const last=st?.lastActionAt||{},recent=Object.entries(last).map(([k,v])=>[k,mins(v)]).sort((a,b)=>a[1]-b[1])[0]||['',9999];
@@ -36,23 +36,47 @@
     return pick(['👀 さっきからこっち見てる','✨ なんか機嫌いい','… ひとりでしょもしょもしてる','📱 なんか触ってる','☀️ ふつうに過ごしてる','… ぼーっとしてる','👀 たまにこっち見る','✨ 今日はわりと元気','… なんでもない顔してる','📱 ちょっと暇そう'],seed);
   }
 
+  function setObservation(el,t){
+    if(!el||!t)return;
+    currentObservation=t;
+    if(el.textContent!==t)el.textContent=t;
+  }
+
   function update(force=false){
     const el=document.getElementById('g12status');if(!el)return;
     const st=getState(),stage=document.getElementById('g12stage')?.textContent||'',sig=signature(st,stage);
     if(!force&&sig===lastSignature&&Date.now()<nextChangeAt)return;
     lastSignature=sig;
-    const prev=el.textContent;
+    const prev=currentObservation||el.textContent;
     let t='';
     for(let i=0;i<5;i++){
       statusTick++;
       t=text();
       if(t!==prev)break;
     }
-    if(t&&el.textContent!==t)el.textContent=t;
+    setObservation(el,t);
     schedule();
   }
 
-  document.addEventListener('click',e=>{if(e.target.closest?.('[data-a],[data-e]'))setTimeout(()=>update(true),120)});
+  const statusObserver=new MutationObserver(()=>{
+    const el=document.getElementById('g12status');
+    if(!el||!currentObservation||el.textContent===currentObservation)return;
+    el.textContent=currentObservation;
+  });
+  function watchStatus(){
+    const el=document.getElementById('g12status');
+    if(!el)return false;
+    statusObserver.disconnect();
+    statusObserver.observe(el,{childList:true,characterData:true,subtree:true});
+    return true;
+  }
+
+  document.addEventListener('click',e=>{
+    if(!e.target.closest?.('[data-a],[data-e]'))return;
+    if(!watchStatus())setTimeout(watchStatus,0);
+    setTimeout(()=>update(true),120);
+  });
   setInterval(()=>update(false),20000);
-  setTimeout(()=>update(true),0);setTimeout(()=>update(false),500);setTimeout(()=>update(false),1500);
+  setTimeout(()=>{watchStatus();update(true)},0);
+  setTimeout(()=>update(false),500);setTimeout(()=>update(false),1500);
 })();
