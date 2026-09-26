@@ -10,11 +10,27 @@ const share=new ShareService();
 let idlePoseTimer=0,idleSpeechTimer=0,heartbeatTimer=0,perspectiveTimer=0;
 
 const rand=(min,max)=>min+Math.random()*(max-min);
+const emptyCorpus=()=>({pools:{},sceneMap:new Map(),tokens:[],count:0});
 const schedulePose=(min=6500,max=15000)=>{clearTimeout(idlePoseTimer);idlePoseTimer=setTimeout(()=>{if(view?.showIdlePose())share.schedule(350);schedulePose()},rand(min,max))};
 const scheduleSpeech=(min=20000,max=45000)=>{clearTimeout(idleSpeechTimer);idleSpeechTimer=setTimeout(async()=>{if(await model?.idleSpeech()){await view.render({preservePet:true});share.schedule(350)}scheduleSpeech()},rand(min,max))};
 const afterInteraction=()=>{schedulePose(6500,11000);scheduleSpeech(26000,48000)};
 
-async function switchModel(viewer){model=new GrowModel(viewer);await model.load();if(!view)view=new GrowView(model,sourceLog);else view.setModel(model);await view.render({forceObservation:true});share.schedule(250)}
+async function loadModelFast(viewer){
+  const next=new GrowModel(viewer);
+  const realLoadCorpus=next.loadCorpus.bind(next);
+  next.loadCorpus=async()=>{next.corpus=emptyCorpus()};
+  await next.load();
+  next.loadCorpus=realLoadCorpus;
+  setTimeout(async()=>{
+    try{
+      await next.loadCorpus();
+      if(model===next&&view){await view.render({preservePet:true});share.schedule(350)}
+    }catch(e){console.warn('grow corpus background load failed',e)}
+  },0);
+  return next;
+}
+
+async function switchModel(viewer){model=await loadModelFast(viewer);if(!view)view=new GrowView(model,sourceLog);else view.setModel(model);await view.render({forceObservation:true});document.getElementById('growLoading')?.remove();share.schedule(250)}
 
 async function handleCare(button){if(button.disabled)return;afterInteraction();view.releasePose();let result;if(button.dataset.a)result=await model.act(button.dataset.a);else result=await model.eggAct(button.dataset.e);view.forceObservation();await view.render({preservePet:true,forceObservation:true});if(result?.reaction)view.showReaction(result.reaction,result.anim);else if(!view.poseHeld())view.applyPose(model.currentPet());if(result?.stageChanged)view.showStageUp(result.stageChanged);share.schedule(500)}
 
@@ -22,6 +38,10 @@ function bind(){const root=document.getElementById('g12');root.addEventListener(
 
 async function heartbeat(){if(!model||!view)return;const wasPoop=!!model.state.poop,wasSleep=model.isAsleep();model.updatePoop();const sleep=model.isAsleep();const changed=wasPoop!==!!model.state.poop||wasSleep!==sleep;await view.render({preservePet:true,forceObservation:changed});if(changed)share.schedule(350)}
 
-async function boot(){try{window.wireLock?.('../');await switchModel(getViewer());bind();share.bind();sourceLog.load();schedulePose(5000,10000);scheduleSpeech(22000,38000);heartbeatTimer=setInterval(heartbeat,20000);perspectiveTimer=setInterval(async()=>{const v=getViewer();if(model&&v!==model.viewer){await switchModel(v);afterInteraction()}},2000)}catch(e){console.error('われわれ育成所の起動に失敗',e);const host=document.querySelector('.conversation-shell')||document.body;const p=document.createElement('p');p.className='grow-boot-error';p.textContent='育成所を読み込めなかった。再読み込みしてみて。';host.append(p)}}
+function showBootError(error){console.error('われわれ育成所の起動に失敗',error);const host=document.querySelector('.conversation-shell')||document.body;document.getElementById('growLoading')?.remove();let p=document.querySelector('.grow-boot-error');if(!p){p=document.createElement('p');p.className='grow-boot-error';host.append(p)}p.textContent=`育成所を読み込めなかった：${error?.message||error||'unknown error'}`}
 
+async function boot(){try{window.wireLock?.('../');await switchModel(getViewer());bind();share.bind();sourceLog.load();schedulePose(5000,10000);scheduleSpeech(22000,38000);heartbeatTimer=setInterval(heartbeat,20000);perspectiveTimer=setInterval(async()=>{const v=getViewer();if(model&&v!==model.viewer){await switchModel(v);afterInteraction()}},2000)}catch(e){showBootError(e)}}
+
+window.addEventListener('error',e=>{if(!document.getElementById('g12'))showBootError(e.error||e.message)});
+window.addEventListener('unhandledrejection',e=>{if(!document.getElementById('g12'))showBootError(e.reason)});
 boot();
