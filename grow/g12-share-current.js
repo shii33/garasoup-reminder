@@ -108,27 +108,20 @@
     return new Promise((resolve,reject)=>out.toBlob(b=>b?resolve(b):reject(new Error('画像を作れなかった')),'image/png'));
   }
 
-  async function shareCard(){
-    const blob=await makeShareBlob();
+  function makeFile(blob){
     const v=localStorage.getItem('warera_chat_perspective')==='も'?'も':'み';
     const t=v==='み'?'も':'み';
     const d=new Date();
     const date=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    const file=new File([blob],`warera-pet-${t}-${date}.png`,{type:'image/png'});
+    return new File([blob],`warera-pet-${t}-${date}.png`,{type:'image/png'});
+  }
 
-    if(navigator.share){
-      const canShareFiles=!navigator.canShare||navigator.canShare({files:[file]});
-      if(canShareFiles){
-        try{
-          await navigator.share({files:[file],title:'われわれ育成所'});
-          return;
-        }catch(e){
-          if(e?.name==='AbortError')return;
-          console.warn('native share failed',e);
-        }
-      }
-    }
+  function canNativeShare(file){
+    if(!navigator.share)return false;
+    try{return !navigator.canShare||navigator.canShare({files:[file]})}catch(e){return false}
+  }
 
+  function downloadFile(blob,file){
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
     a.download=file.name;
@@ -136,6 +129,61 @@
     a.click();
     a.remove();
     setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+  }
+
+  function showReadySheet(blob,file){
+    document.getElementById('g12shareReady')?.remove();
+    const overlay=document.createElement('div');
+    overlay.id='g12shareReady';
+    Object.assign(overlay.style,{
+      position:'fixed',inset:'0',zIndex:'99999',background:'rgba(0,0,0,.38)',
+      display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'16px',boxSizing:'border-box'
+    });
+    const panel=document.createElement('div');
+    Object.assign(panel.style,{
+      width:'min(440px,100%)',background:'#fff',border:'1px solid #111',borderRadius:'18px',
+      boxShadow:'6px 6px 0 rgba(0,0,0,.3)',padding:'16px',boxSizing:'border-box',fontFamily:'inherit'
+    });
+    const shareOk=canNativeShare(file);
+    panel.innerHTML=`<div style="font-weight:900;font-size:16px;margin-bottom:4px">画像できたよ</div><div style="font-size:12px;color:#666;margin-bottom:14px">${shareOk?'「共有する」で端末の共有メニューを開けます。':'このブラウザでは画像共有に対応していないため、保存してください。'}</div><div style="display:grid;gap:8px">${shareOk?'<button type="button" data-share-native style="min-height:48px;border:1px solid #111;border-radius:12px;background:#111;color:#fff;font-weight:900;font-size:15px">共有する</button>':''}<button type="button" data-share-save style="min-height:48px;border:1px solid #111;border-radius:12px;background:#fff;color:#111;font-weight:900;font-size:15px">画像を保存</button><button type="button" data-share-close style="min-height:42px;border:0;background:transparent;color:#666;font-weight:700">キャンセル</button></div>`;
+    overlay.append(panel);
+    document.body.append(overlay);
+
+    panel.querySelector('[data-share-native]')?.addEventListener('click',async()=>{
+      try{
+        await navigator.share({files:[file],title:'われわれ育成所'});
+        overlay.remove();
+      }catch(e){
+        if(e?.name==='AbortError')return;
+        console.warn('native share failed',e);
+        alert('共有メニューを開けなかった。画像を保存して共有してみて。');
+      }
+    });
+    panel.querySelector('[data-share-save]')?.addEventListener('click',()=>{
+      downloadFile(blob,file);
+      overlay.remove();
+    });
+    panel.querySelector('[data-share-close]')?.addEventListener('click',()=>overlay.remove());
+    overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
+  }
+
+  async function shareCard(){
+    const blob=await makeShareBlob();
+    const file=makeFile(blob);
+
+    if(canNativeShare(file)){
+      try{
+        await navigator.share({files:[file],title:'われわれ育成所'});
+        return;
+      }catch(e){
+        if(e?.name==='AbortError')return;
+        console.warn('initial native share failed',e);
+      }
+    }
+
+    // Chrome mobile may lose transient user activation while the image is being rendered.
+    // Never force-download here: show a second tap target so navigator.share gets fresh activation.
+    showReadySheet(blob,file);
   }
 
   document.addEventListener('click',async e=>{
