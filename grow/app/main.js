@@ -1,8 +1,8 @@
-import './data-service.js';
-import {GrowModel,getViewer} from './core.js';
-import {SourceLog} from './source-log.js';
-import {GrowView} from './view.js';
-import {ShareService} from './share.js';
+import './data-service.js?v=20260926-refactor-3';
+import {GrowModel,getViewer} from './core.js?v=20260926-refactor-3';
+import {SourceLog} from './source-log.js?v=20260926-refactor-3';
+import {GrowView} from './view.js?v=20260926-refactor-3';
+import {ShareService} from './share.js?v=20260926-refactor-3';
 
 let model=null,view=null;
 const sourceLog=new SourceLog();
