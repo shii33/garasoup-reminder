@@ -1,4 +1,4 @@
-import {NAMES,petUrl,cleanText} from './core.js?v=20260926-life-4';
+import {NAMES,petUrl,cleanText} from './core.js?v=20260927-life-5';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const enc=s=>encodeURIComponent(String(s??''));
@@ -7,6 +7,10 @@ const uniq=a=>[...new Set((a||[]).map(x=>cleanText(x)).filter(Boolean))];
 const shuffled=a=>{const out=[...(a||[])];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}return out};
 const sample=(a,n)=>shuffled(uniq(a)).slice(0,n);
 const usefulEnding=s=>{const t=cleanText(s);return !!t&&t.length<=18&&!/^(?:w+|ｗ+|笑+|草+)$/i.test(t)&&!/^[-ー〜~!?！？。、…・]+$/.test(t)};
+const FRONT_EXTRA={
+  み:['みちゃこ','今日','われわれ','この子','ガラスープ','これ','それ','さっき','明日','仕事','ごはん','ねこ'],
+  も:['もっち','今日','われわれ','この子','ガラスープ','これ','それ','さっき','明日','仕事','ごはん','ねこ']
+};
 
 export class GrowView{
   constructor(model,sourceLog,life){this.model=model;this.sourceLog=sourceLog;this.life=life;this.heldPose='';this.heldUntil=0;this.idleFxTimer=0;this.activity=null;this.mount();this.bindSourceButton()}
@@ -20,8 +24,9 @@ export class GrowView{
   bindSourceButton(){this.$('g12memory').addEventListener('click',e=>{if(!e.currentTarget.dataset.sourceLog)return;e.preventDefault();e.stopPropagation();this.sourceLog.open()})}
   poseHeld(){if(!this.heldPose)return false;if(Date.now()>=this.heldUntil){this.releasePose();return false}return true}
   releasePose(){this.heldPose='';this.heldUntil=0}
-  applyPose(file,anim=''){const img=this.$('g12pet');if(!img||!file)return;img.onerror=()=>{img.onerror=null};img.src=petUrl(this.model,file);if(anim){img.classList.remove('bounce','wiggle','squish','idle-breathe','idle-peek','idle-doze','idle-shuffle');void img.offsetWidth;img.classList.add(anim);if(!anim.startsWith('idle-'))setTimeout(()=>img.classList.remove(anim),700)}}
-  showReaction(file,anim='',holdMs){if(!file||this.life.isOuting())return;const ms=holdMs??7000;this.heldPose=file;this.heldUntil=Date.now()+ms;this.applyPose(file,anim)}
+  safePose(file){const st=this.model.stageKey();if(st==='egg')return'egg_idle.png';if(st==='baby')return String(file||'').startsWith('baby_')?file:'baby_front.png';if(st==='child'){if(String(file||'').startsWith('child_'))return file;if(file==='adult_cheer.png')return'child_cheer.png';return'child_front.png'}return file}
+  applyPose(file,anim=''){const img=this.$('g12pet'),safe=this.safePose(file);if(!img||!safe)return;img.onerror=()=>{img.onerror=null};img.src=petUrl(this.model,safe);if(anim){img.classList.remove('bounce','wiggle','squish','idle-breathe','idle-peek','idle-doze','idle-shuffle');void img.offsetWidth;img.classList.add(anim);if(!anim.startsWith('idle-'))setTimeout(()=>img.classList.remove(anim),700)}}
+  showReaction(file,anim='',holdMs){if(!file||this.life.isOuting())return;const ms=holdMs??7000;this.heldPose=this.safePose(file);this.heldUntil=Date.now()+ms;this.applyPose(file,anim)}
   applyLifeEvent(event){if(!event)return;if(event.speech!=null)this.$('g12speech').textContent=event.speech||'…';if(event.pose&&!this.life.isOuting()){this.releasePose();this.applyPose(event.pose,event.anim||'')}if(event.fx)this.showIdleFx(event.fx)}
   showIdleFx(text){const el=this.$('g12idlefx');if(!el||!text)return;el.textContent=text;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');clearTimeout(this.idleFxTimer);this.idleFxTimer=setTimeout(()=>el.classList.remove('show'),1900)}
   async render({preservePet=false}={}){
@@ -44,8 +49,8 @@ export class GrowView{
   closeModal(){this.$('g12modal').hidden=true;this.activity=null}
   showPlayMenu(){this.activity={type:'menu'};this.openModal(`<div class="g12modalhead"><div><b>あそぶ</b><small>なにする？</small></div><button data-modal-close>×</button></div><div class="g12playmenu"><button data-play-mode="tease"><span>🎮</span><b>いつものちょっかい</b><small>とりあえず構う。</small></button><button data-play-mode="words"><span>💬</span><b>ことばをくっつける</b><small>左・まんなか・右を1つずつ。</small></button><button data-play-mode="quiz"><span>❓</span><b>続きあて</b><small>この次なんて返した？</small></button></div>`)}
   randomizeWordGame(game){
-    const short=(this.model.corpus?.pools?.short||[]).map(x=>cleanText(x?.text||'')).filter(usefulEnding),seed=cleanText(game?.seed||'');
-    const frontPool=[...(game?.front||[])],endPool=[...(game?.end||[]),...short];
+    const short=(this.model.corpus?.pools?.short||[]).map(x=>cleanText(x?.text||'')).filter(usefulEnding),seed=cleanText(game?.seed||''),tokens=new Set(this.model.corpus?.tokens||[]);
+    const frontPool=uniq([...(FRONT_EXTRA[this.model.target]||[]),...(game?.front||[]).filter(v=>cleanText(v)!==seed&&!tokens.has(cleanText(v)))]),endPool=[...(game?.end||[]),...short];
     let front=sample(frontPool,7),middle=sample(game?.middle||[],7),end=sample(endPool,7);
     if(seed&&usefulEnding(seed)&&!end.includes(seed))end=[...end.slice(0,6),seed];
     return{...game,front,middle,end}
