@@ -7,17 +7,21 @@
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>われわれ育成所｜我らのあそび場</title>
 <link rel="stylesheet" href="../assets/site.css">
-<link rel="stylesheet" href="./app/styles.css?v=20260926-refactor-2">
-<style>.app-title{display:none!important}</style>
+<link rel="stylesheet" href="./app/styles.css?v=20260926-refactor-3">
+<style>
+.app-title{display:none!important}
+#growLoading{padding:14px;border:1px solid #111;border-radius:10px;background:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.18);font-size:12px;font-weight:800}
+</style>
 </head>
 <body>
 <header class="site-header"><div class="site-header__inner"><a class="brand" href="../">我らのあそび場</a><button class="lock-btn" data-lock>鍵をかける</button></div></header>
 <main class="shell app-shell conversation-shell">
   <div class="backline"><a href="../">← あそび場にもどる</a></div>
   <section class="app-title"><div class="icon">🥚</div><div><h1>われわれ育成所</h1><p>相手を、勝手に育てる。</p></div></section>
+  <div id="growLoading">育成所を読み込み中…</div>
 </main>
 <script src="../assets/auth.js"></script>
 <script src="../assets/common.js"></script>
-<script type="module" src="./app/main.js?v=20260926-refactor-2"></script>
+<script type="module" src="./app/main.js?v=20260926-refactor-3"></script>
 </body>
 </html>
