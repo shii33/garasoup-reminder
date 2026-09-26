@@ -16,7 +16,7 @@ function topScore(scores){return Object.entries(scores).sort((a,b)=>b[1]-a[1])[0
 function resolveEvolution(){
  if(S.stageRank===0){const n=Object.values(S.eggActions||{}).reduce((a,b)=>a+Number(b||0),0),u=Object.keys(S.eggActions||{}).filter(k=>S.eggActions[k]>0).length;if(n>=5&&u>=3)S.stageRank=1}
  if(S.stageRank===1&&S.experience>=16&&uniqueCare()>=3)S.stageRank=2;
- if(S.stageRank===2&&S.experience>=32&&S.nights>=1&&uniqueCare()>=4)S.stageRank=3;
+ if(S.stageRank===2&&S.experience>=48&&uniqueCare()>=4)S.stageRank=3;
  const t=S.traits;
  if(S.stageRank>=2&&Number(S.childTypeVersion||0)<2){
    S.childType=topScore({
