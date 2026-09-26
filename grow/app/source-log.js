@@ -1,5 +1,3 @@
-import {cleanText,getViewer} from './core.js';
-
 const BABY_BASES=new Set(['…','ん。','ふむ。','もぐ。','んま。','ごはん。','…！','きゃ。','ふふ。','んふ。','…♡','ぬくい。','ふろ。','ぷは。','ほかほか。','すっきり。','ねむ。','…ねる。','すや。','おきた。','…ん。','きた。']);
 const norm=s=>String(s??'').replace(/\s+/g,' ').trim();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
