@@ -70,4 +70,11 @@
     s.dataset.growSourceLog='1';
     document.head.append(s);
   }
+  if(!document.querySelector('script[data-grow-observation-status]')){
+    const s=document.createElement('script');
+    s.src='./observation-status.js?v=20260926-1';
+    s.defer=true;
+    s.dataset.growObservationStatus='1';
+    document.head.append(s);
+  }
 })();
