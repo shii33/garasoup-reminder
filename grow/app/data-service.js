@@ -66,3 +66,5 @@ export async function expandedQuiz(home='../'){
   })();
   return expandedQuizPromise;
 }
+
+window.WareraData={memories,expandedMemories,expandedQuiz};
