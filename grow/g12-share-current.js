@@ -4,6 +4,11 @@
   window.__wareraG12ShareBooted=true;
 
   const H2C='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+  let cachedBlob=null;
+  let cachedFile=null;
+  let renderPromise=null;
+  let refreshTimer=0;
+  let lastRenderAt=0;
 
   function loadHtml2Canvas(){
     if(window.html2canvas)return Promise.resolve(window.html2canvas);
@@ -121,69 +126,43 @@
     try{return !navigator.canShare||navigator.canShare({files:[file]})}catch(e){return false}
   }
 
-  function downloadFile(blob,file){
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download=file.name;
-    document.body.append(a);
-    a.click();
-    a.remove();
-    setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+  async function refreshCache(force=false){
+    if(renderPromise)return renderPromise;
+    if(!force&&Date.now()-lastRenderAt<1200&&cachedFile)return cachedFile;
+    renderPromise=(async()=>{
+      const blob=await makeShareBlob();
+      cachedBlob=blob;
+      cachedFile=makeFile(blob);
+      lastRenderAt=Date.now();
+      return cachedFile;
+    })().catch(err=>{
+      console.warn('share cache refresh failed',err);
+      return null;
+    }).finally(()=>{renderPromise=null});
+    return renderPromise;
   }
 
-  function showReadySheet(blob,file){
-    document.getElementById('g12shareReady')?.remove();
-    const overlay=document.createElement('div');
-    overlay.id='g12shareReady';
-    Object.assign(overlay.style,{
-      position:'fixed',inset:'0',zIndex:'99999',background:'rgba(0,0,0,.38)',
-      display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'16px',boxSizing:'border-box'
-    });
-    const panel=document.createElement('div');
-    Object.assign(panel.style,{
-      width:'min(440px,100%)',background:'#fff',border:'1px solid #111',borderRadius:'18px',
-      boxShadow:'6px 6px 0 rgba(0,0,0,.3)',padding:'16px',boxSizing:'border-box',fontFamily:'inherit'
-    });
-    const shareOk=canNativeShare(file);
-    panel.innerHTML=`<div style="font-weight:900;font-size:16px;margin-bottom:4px">画像できたよ</div><div style="font-size:12px;color:#666;margin-bottom:14px">${shareOk?'「共有する」で端末の共有メニューを開けます。':'このブラウザでは画像共有に対応していないため、保存してください。'}</div><div style="display:grid;gap:8px">${shareOk?'<button type="button" data-share-native style="min-height:48px;border:1px solid #111;border-radius:12px;background:#111;color:#fff;font-weight:900;font-size:15px">共有する</button>':''}<button type="button" data-share-save style="min-height:48px;border:1px solid #111;border-radius:12px;background:#fff;color:#111;font-weight:900;font-size:15px">画像を保存</button><button type="button" data-share-close style="min-height:42px;border:0;background:transparent;color:#666;font-weight:700">キャンセル</button></div>`;
-    overlay.append(panel);
-    document.body.append(overlay);
-
-    panel.querySelector('[data-share-native]')?.addEventListener('click',async()=>{
-      try{
-        await navigator.share({files:[file],title:'われわれ育成所'});
-        overlay.remove();
-      }catch(e){
-        if(e?.name==='AbortError')return;
-        console.warn('native share failed',e);
-        alert('共有メニューを開けなかった。画像を保存して共有してみて。');
-      }
-    });
-    panel.querySelector('[data-share-save]')?.addEventListener('click',()=>{
-      downloadFile(blob,file);
-      overlay.remove();
-    });
-    panel.querySelector('[data-share-close]')?.addEventListener('click',()=>overlay.remove());
-    overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
+  function scheduleRefresh(delay=650){
+    clearTimeout(refreshTimer);
+    refreshTimer=setTimeout(()=>refreshCache(true),delay);
   }
 
-  async function shareCard(){
-    const blob=await makeShareBlob();
-    const file=makeFile(blob);
+  function bootCache(){
+    const root=document.querySelector('#g12 .g12main');
+    if(!root){setTimeout(bootCache,300);return}
+    scheduleRefresh(200);
 
-    if(canNativeShare(file)){
-      try{
-        await navigator.share({files:[file],title:'われわれ育成所'});
-        return;
-      }catch(e){
-        if(e?.name==='AbortError')return;
-        console.warn('initial native share failed',e);
-      }
+    const pet=document.getElementById('g12pet');
+    if(pet){
+      new MutationObserver(()=>scheduleRefresh(350)).observe(pet,{attributes:true,attributeFilter:['src']});
     }
-
-    // Chrome mobile may lose transient user activation while the image is being rendered.
-    // Never force-download here: show a second tap target so navigator.share gets fresh activation.
-    showReadySheet(blob,file);
+    const speech=document.getElementById('g12speech');
+    if(speech){
+      new MutationObserver(()=>scheduleRefresh(350)).observe(speech,{childList:true,subtree:true,characterData:true});
+    }
+    document.addEventListener('click',e=>{
+      if(e.target.closest?.('#g12actions [data-a]'))scheduleRefresh(500);
+    },true);
   }
 
   document.addEventListener('click',async e=>{
@@ -192,13 +171,27 @@
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
-    if(b.dataset.sharing==='1')return;
-    b.dataset.sharing='1';
-    b.disabled=true;
-    const old=b.textContent;
-    b.textContent='画像を作成中…';
-    try{await shareCard()}
-    catch(err){console.error('g12 share',err);alert('画像を作れなかった。もう一度ためしてみて。')}
-    finally{delete b.dataset.sharing;b.disabled=false;b.textContent=old||'画像にする'}
+
+    const file=cachedFile;
+    if(!file){
+      alert('共有画像を準備中。少し待ってもう一度押してね。');
+      refreshCache(true);
+      return;
+    }
+    if(!canNativeShare(file)){
+      alert('このブラウザでは端末の共有画面を開けません。');
+      return;
+    }
+
+    try{
+      await navigator.share({files:[file],title:'われわれ育成所'});
+    }catch(err){
+      if(err?.name!=='AbortError'){
+        console.warn('native share failed',err);
+        alert('共有画面を開けなかった。もう一度ためしてみて。');
+      }
+    }
   },true);
+
+  bootCache();
 })();
