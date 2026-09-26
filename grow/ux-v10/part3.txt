@@ -1,19 +1,46 @@
 const $=id=>document.getElementById(id),now=()=>Date.now(),today=()=>new Date().toISOString().slice(0,10),pick=a=>a[Math.floor(Math.random()*a.length)],clamp=(v,a=0,b=9999)=>Math.max(a,Math.min(b,Number(v)||0));
 function getV(){try{return localStorage.getItem('warera_chat_perspective')==='も'?'も':'み'}catch(e){return'み'}}
 const K=()=>`${P}${V}_${G}`;
-function fresh(){return{id:K(),version:20,viewer:V,target:G,born:today(),stageRank:0,experience:0,totalCare:0,actions:{},lastActionAt:{},recent:[],traits:{clingy:0,independent:0,overcare:0,playful:0,gentle:0},eggActions:{},nights:0,lastNight:'',childType:'',personality:'',favoritePhrases:{},learned:{},lastSpeech:'……おけけ？',lastVisitAt:now(),manualSleepUntil:0,morningWakeDate:'',poop:false,poopDueAt:0,updatedAt:now()}}
+function fresh(){return{id:K(),version:20,viewer:V,target:G,born:today(),stageRank:0,experience:0,totalCare:0,actions:{},lastActionAt:{},recent:[],traits:{clingy:0,independent:0,overcare:0,playful:0,gentle:0},eggActions:{},nights:0,lastNight:'',childType:'',childTypeVersion:2,personality:'',personalityVersion:2,favoritePhrases:{},learned:{},lastSpeech:'……おけけ？',lastVisitAt:now(),manualSleepUntil:0,morningWakeDate:'',poop:false,poopDueAt:0,updatedAt:now()}}
 function openDb(){return new Promise((resolve,reject)=>{try{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(STORE))r.result.createObjectStore(STORE,{keyPath:'id'})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)}catch(e){reject(e)}})}
 async function readDb(){try{const db=await openDb(),x=await new Promise((res,rej)=>{const q=db.transaction(STORE,'readonly').objectStore(STORE).get(K());q.onsuccess=()=>res(q.result||null);q.onerror=()=>rej(q.error)});db.close();return x}catch(e){return null}}
 function readLocal(){try{return JSON.parse(localStorage.getItem(K())||'null')}catch(e){return null}}
 async function load(){const[a,b]=await Promise.all([readDb(),Promise.resolve(readLocal())]);const x=a&&b?(Number(a.updatedAt||0)>=Number(b.updatedAt||0)?a:b):(a||b);return x||fresh()}
 async function save(){S.id=K();S.viewer=V;S.target=G;S.version=20;S.updatedAt=now();try{localStorage.setItem(K(),JSON.stringify(S))}catch(e){}try{const db=await openDb();await new Promise((res,rej)=>{const q=db.transaction(STORE,'readwrite').objectStore(STORE).put(S);q.onsuccess=()=>res();q.onerror=()=>rej(q.error)});db.close()}catch(e){}}
-function migrate(){S=S||fresh();const legacyXP=Number(S.growthXP||0);if(S.version<20||S.stageRank==null){S.stageRank=legacyXP>=520?3:legacyXP>=200?2:legacyXP>=48?1:0;S.experience=Math.max(Number(S.experience||0),Math.round(Number(S.totalCare||0)*1.2),S.stageRank===3?48:S.stageRank===2?16:S.stageRank===1?5:0)}S.version=20;S.actions=S.actions||{};S.lastActionAt=S.lastActionAt||{};S.recent=Array.isArray(S.recent)?S.recent:[];S.traits=S.traits||{};for(const k of ['clingy','independent','overcare','playful','gentle'])S.traits[k]=Number(S.traits[k]||0);if(S.profile){S.traits.clingy=Math.max(S.traits.clingy,Number(S.profile.affection||0)*.35);S.traits.independent=Math.max(S.traits.independent,Number(S.profile.practical||0)*.22);S.traits.overcare=Math.max(S.traits.overcare,Number(S.profile.overcare||0)*.5)}S.eggActions=S.eggActions||{};S.favoritePhrases=S.favoritePhrases||{};S.learned=S.learned||{};S.nights=Number(S.nights||0);S.lastNight=S.lastNight||'';S.childType=S.childType||'';S.personality=S.personality||'';S.manualSleepUntil=Number(S.manualSleepUntil||S.sleepUntil||0);S.morningWakeDate=S.morningWakeDate||'';S.poop=!!S.poop;S.poopDueAt=Number(S.poopDueAt||0);S.lastVisitAt=Number(S.lastVisitAt||now());S.lastSpeech=S.lastSpeech||'……おけけ？';updateReturnTrait();resolveEvolution()}
+function migrate(){S=S||fresh();const legacyXP=Number(S.growthXP||0);if(S.version<20||S.stageRank==null){S.stageRank=legacyXP>=520?3:legacyXP>=200?2:legacyXP>=48?1:0;S.experience=Math.max(Number(S.experience||0),Math.round(Number(S.totalCare||0)*1.2),S.stageRank===3?48:S.stageRank===2?16:S.stageRank===1?5:0)}S.version=20;S.actions=S.actions||{};S.lastActionAt=S.lastActionAt||{};S.recent=Array.isArray(S.recent)?S.recent:[];S.traits=S.traits||{};for(const k of ['clingy','independent','overcare','playful','gentle'])S.traits[k]=Number(S.traits[k]||0);if(S.profile){S.traits.clingy=Math.max(S.traits.clingy,Number(S.profile.affection||0)*.35);S.traits.independent=Math.max(S.traits.independent,Number(S.profile.practical||0)*.22);S.traits.overcare=Math.max(S.traits.overcare,Number(S.profile.overcare||0)*.5)}S.eggActions=S.eggActions||{};S.favoritePhrases=S.favoritePhrases||{};S.learned=S.learned||{};S.nights=Number(S.nights||0);S.lastNight=S.lastNight||'';S.childType=S.childType||'';S.childTypeVersion=Number(S.childTypeVersion||0);S.personality=S.personality||'';S.personalityVersion=Number(S.personalityVersion||0);S.manualSleepUntil=Number(S.manualSleepUntil||S.sleepUntil||0);S.morningWakeDate=S.morningWakeDate||'';S.poop=!!S.poop;S.poopDueAt=Number(S.poopDueAt||0);S.lastVisitAt=Number(S.lastVisitAt||now());S.lastSpeech=S.lastSpeech||'……おけけ？';updateReturnTrait();resolveEvolution()}
 function updateReturnTrait(){const gap=Math.max(0,(now()-Number(S.lastVisitAt||now()))/36e5);if(gap>=3)S.traits.independent+=Math.min(2.4,gap/8);S.lastVisitAt=now()}
 function stage(){return[['egg','たまご'],['baby','あかちゃん'],['child','こども'],['adult','おとな']][clamp(S.stageRank,0,3)]}
 function ageDays(){return Math.max(0,Math.floor((new Date()-new Date((S.born||today())+'T00:00:00'))/864e5))}
 function uniqueCare(){return Object.keys(S.actions||{}).filter(k=>['feed','play','pat','bath','toilet'].includes(k)&&S.actions[k]>0).length}
-function resolveEvolution(){if(S.stageRank===0){const n=Object.values(S.eggActions||{}).reduce((a,b)=>a+Number(b||0),0),u=Object.keys(S.eggActions||{}).filter(k=>S.eggActions[k]>0).length;if(n>=5&&u>=3)S.stageRank=1}if(S.stageRank===1&&S.experience>=16&&uniqueCare()>=3)S.stageRank=2;if(S.stageRank===2&&S.experience>=48&&S.nights>=1&&uniqueCare()>=4)S.stageRank=3;if(S.stageRank>=2&&!S.childType){const t=S.traits;S.childType=(t.clingy+t.overcare*.45+t.playful*.15)>(t.independent+t.gentle*.15)?'affection':'plain'}if(S.stageRank===3&&!S.personality){const t=S.traits;if(t.independent>t.clingy*1.22&&t.independent>t.overcare*1.4)S.personality='aloof';else if(t.overcare>4&&t.overcare>t.gentle*.55)S.personality='tsundere';else S.personality='dere'}}
-function branchLabel(){const [st]=stage();if(st==='child')return S.childType==='affection'?'かまわれ育ち':'マイペース育ち';if(st==='adult')return S.personality==='aloof'?'そっけない系':S.personality==='tsundere'?'ツンデレ系':'でれ系';return''}
+function topScore(scores){return Object.entries(scores).sort((a,b)=>b[1]-a[1])[0]?.[0]||''}
+function resolveEvolution(){
+ if(S.stageRank===0){const n=Object.values(S.eggActions||{}).reduce((a,b)=>a+Number(b||0),0),u=Object.keys(S.eggActions||{}).filter(k=>S.eggActions[k]>0).length;if(n>=5&&u>=3)S.stageRank=1}
+ if(S.stageRank===1&&S.experience>=16&&uniqueCare()>=3)S.stageRank=2;
+ if(S.stageRank===2&&S.experience>=48&&S.nights>=1&&uniqueCare()>=4)S.stageRank=3;
+ const t=S.traits;
+ if(S.stageRank>=2&&Number(S.childTypeVersion||0)<2){
+   S.childType=topScore({
+     affection:t.clingy+t.overcare*.30+t.gentle*.10,
+     playful:t.playful*1.15+t.clingy*.15,
+     calm:t.gentle*1.10+t.independent*.12,
+     independent:t.independent*1.12+t.gentle*.08
+   });
+   S.childTypeVersion=2;
+ }
+ if(S.stageRank===3&&Number(S.personalityVersion||0)<2){
+   S.personality=topScore({
+     amaenbo:t.clingy*1.35+t.gentle*.22-t.independent*.20,
+     playful:t.playful*1.38+t.clingy*.14+t.overcare*.08,
+     gentle:t.gentle*1.18+t.independent*.18-t.overcare*.08,
+     aloof:t.independent*1.28-t.clingy*.24,
+     tsundere:t.overcare*1.20+t.independent*.34+t.clingy*.08,
+     moody:t.overcare*.72+t.playful*.58+t.independent*.28,
+     dere:t.clingy*.92+t.gentle*.62+t.playful*.12
+   });
+   S.personalityVersion=2;
+ }
+}
+function branchLabel(){const [st]=stage();if(st==='child'){const m={affection:'かまわれ育ち',playful:'いたずら育ち',calm:'おだやか育ち',independent:'マイペース育ち',plain:'マイペース育ち'};return m[S.childType]||'マイペース育ち'}if(st==='adult'){const m={amaenbo:'甘えんぼ系',playful:'いたずら系',gentle:'おだやか系',aloof:'そっけない系',tsundere:'ツンデレ系',moody:'気分屋系',dere:'でれ系'};return m[S.personality]||'でれ系'}return''}
 function localDateKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function nightKey(d=new Date()){const x=new Date(d);if(x.getHours()<9)x.setDate(x.getDate()-1);return localDateKey(x)}
 function markNight(){const k=nightKey();if(S.lastNight!==k){S.lastNight=k;S.nights++;S.experience+=1}}
