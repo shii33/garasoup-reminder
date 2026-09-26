@@ -14,6 +14,57 @@
     return !!document.getElementById('g12stage')?.textContent?.includes('おとな');
   }
 
+  let domLockSrc='';
+  let domLockUntil=0;
+  let restoring=false;
+
+  function domLockActive(){
+    if(!domLockSrc)return false;
+    if(Date.now()>=domLockUntil){
+      domLockSrc='';
+      domLockUntil=0;
+      return false;
+    }
+    return true;
+  }
+
+  function restoreLockedPet(){
+    if(restoring||!domLockActive())return;
+    const img=document.getElementById('g12pet');
+    if(!img||img.src===domLockSrc)return;
+    restoring=true;
+    img.src=domLockSrc;
+    queueMicrotask(()=>{restoring=false});
+  }
+
+  function lockVisiblePet(){
+    if(!isAdult())return;
+    const img=document.getElementById('g12pet');
+    if(!img?.src)return;
+    domLockSrc=img.src;
+    domLockUntil=Date.now()+HOLD_MS;
+    restoreLockedPet();
+  }
+
+  document.addEventListener('click',e=>{
+    const b=e.target.closest?.('#g12actions [data-a]');
+    if(!b||b.disabled||!isAdult())return;
+    setTimeout(lockVisiblePet,80);
+    setTimeout(lockVisiblePet,220);
+  },true);
+
+  const domObserver=new MutationObserver(mutations=>{
+    if(!domLockActive())return;
+    for(const m of mutations){
+      if(m.type==='attributes'&&m.target?.id==='g12pet'&&m.attributeName==='src'){
+        restoreLockedPet();
+        break;
+      }
+    }
+  });
+  domObserver.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['src']});
+  setInterval(()=>{if(domLockActive())restoreLockedPet()},250);
+
   function install(){
     if(window.__wareraAdultMotionInstalled)return true;
     if(typeof window.reactionPet!=='function'||typeof window.setPet!=='function'||typeof window.idleOptions!=='function'||typeof window.currentPet!=='function')return false;
