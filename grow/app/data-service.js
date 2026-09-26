@@ -1,4 +1,9 @@
-let memoriesPromise=null,expandedMemoriesPromise=null,expandedQuizPromise=null;
+let corePromise=null,memoriesPromise=null,expandedMemoriesPromise=null,expandedQuizPromise=null;
+
+async function core(home='../'){
+  if(!corePromise)corePromise=window.WareraAuth.load(home+'data/core.enc',home);
+  return corePromise;
+}
 
 export async function memories(home='../'){
   if(!memoriesPromise)memoriesPromise=(async()=>{
@@ -45,9 +50,11 @@ function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i)
 
 export async function expandedQuiz(home='../'){
   if(!expandedQuizPromise)expandedQuizPromise=(async()=>{
-    const rows=await memories(home),who=[],next=[],whoSeen=new Set(),nextSeen=new Set(),answerPool=[];
+    const [c,rows]=await Promise.all([core(home),memories(home)]),who=[],next=[],whoSeen=new Set(),nextSeen=new Set(),answerPool=[];
     const addWho=q=>{const k=`${q.date}|${q.quote}|${q.answer}`;if(!whoSeen.has(k)){whoSeen.add(k);who.push(q)}};
     const addNext=q=>{const k=`${q.date}|${q.prompt}|${q.answer}`;if(!nextSeen.has(k)){nextSeen.add(k);next.push(q)}};
+    (c.quiz?.who||[]).forEach(addWho);
+    (c.quiz?.next||[]).forEach(addNext);
     for(const s of rows){
       const lines=(s.lines||[]).filter(x=>x&&(x.who==='み'||x.who==='も')&&String(x.text||'').trim());
       for(const l of lines){const t=String(l.text);if(t.length>=4&&t.length<=110&&!t.includes('\n'))addWho({type:'who',quote:t,answer:l.who,date:s.date,scene_id:s.id});if(t.length>=1&&t.length<=90&&!t.includes('\n'))answerPool.push(t)}
