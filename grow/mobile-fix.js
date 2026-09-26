@@ -79,7 +79,7 @@
   }
   if(!document.querySelector('script[data-grow-adult-motion]')){
     const s=document.createElement('script');
-    s.src='./adult-motion.js?v=20260926-3';
+    s.src='./adult-motion.js?v=20260926-4';
     s.defer=true;
     s.dataset.growAdultMotion='1';
     document.head.append(s);
