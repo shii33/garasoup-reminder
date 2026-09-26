@@ -1,3 +1,4 @@
+import './data-service.js';
 import {GrowModel,getViewer} from './core.js';
 import {SourceLog} from './source-log.js';
 import {GrowView} from './view.js';
