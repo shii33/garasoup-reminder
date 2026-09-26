@@ -65,16 +65,9 @@
   }
   if(!document.querySelector('script[data-grow-source-log]')){
     const s=document.createElement('script');
-    s.src='./source-log-v2.js?v=20260926-2';
+    s.src='./source-log-v3.js?v=20260926-3';
     s.defer=true;
     s.dataset.growSourceLog='1';
-    document.head.append(s);
-  }
-  if(!document.querySelector('script[data-grow-source-log-compact]')){
-    const s=document.createElement('script');
-    s.src='./source-log-compact.js?v=20260926-1';
-    s.defer=true;
-    s.dataset.growSourceLogCompact='1';
     document.head.append(s);
   }
 })();
