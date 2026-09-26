@@ -28,6 +28,11 @@
     return true;
   }
 
+  function releaseDomLock(){
+    domLockSrc='';
+    domLockUntil=0;
+  }
+
   function restoreLockedPet(){
     if(restoring||!domLockActive())return;
     const img=document.getElementById('g12pet');
@@ -49,6 +54,8 @@
   document.addEventListener('click',e=>{
     const b=e.target.closest?.('#g12actions [data-a]');
     if(!b||b.disabled||!isAdult())return;
+    releaseDomLock();
+    window.__wareraAdultMotionReleaseHold?.();
     setTimeout(lockVisiblePet,80);
     setTimeout(lockVisiblePet,220);
   },true);
@@ -76,9 +83,15 @@
     let heldFile='';
     let heldUntil=0;
 
+    function releaseHold(){
+      heldFile='';
+      heldUntil=0;
+    }
+    window.__wareraAdultMotionReleaseHold=releaseHold;
+
     function holdActive(){
       if(!heldFile)return false;
-      if(Date.now()>=heldUntil){heldFile='';heldUntil=0;return false}
+      if(Date.now()>=heldUntil){releaseHold();return false}
       return true;
     }
 
