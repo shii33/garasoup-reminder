@@ -84,4 +84,11 @@
     s.dataset.growAdultMotion='1';
     document.head.append(s);
   }
+  if(!document.querySelector('script[data-grow-g12-share-current]')){
+    const s=document.createElement('script');
+    s.src='./g12-share-current.js?v=20260926-1';
+    s.defer=true;
+    s.dataset.growG12ShareCurrent='1';
+    document.head.append(s);
+  }
 })();
