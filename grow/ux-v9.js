@@ -1,97 +1,13 @@
 (()=>{
   if(!/\/grow\/?$/.test(location.pathname))return;
-  const VER='20260926-v10-5';
-  const fallback=()=>{console.warn('われわれ育成所v10の読み込みに失敗');};
-  (async()=>{
-    try{
-      const parts=await Promise.all(Array.from({length:6},(_,i)=>
-        fetch(`./ux-v10/part${i+1}.txt?v=${VER}`,{cache:'no-store'}).then(r=>{
-          if(!r.ok)throw new Error(`v10 part${i+1}: ${r.status}`);
-          return r.text();
-        })
-      ));
-      let src=parts.join('');
-      const oldLoad="async function loadCorpus(){try{const scenes=await window.WareraData?.memories?.('../');if(scenes?.length)return buildCorpus(scenes,G)}catch(e){console.warn('grow corpus fallback',e)}return buildCorpus([],G)}";
-      const newLoad=`function quizToScenes(q){const out=[];let n=0;for(const x of q?.who||[]){if(!x||!x.quote||!x.answer)continue;out.push({id:'quiz-who-'+(n++),date:x.date||'',lines:[{who:x.answer,text:x.quote}]})}for(const x of q?.next||[]){if(!x)continue;const lines=[];if(x.prompt&&x.prompt_who)lines.push({who:x.prompt_who,text:x.prompt});if(x.answer&&x.answer_who)lines.push({who:x.answer_who,text:x.answer});if(lines.length)out.push({id:'quiz-next-'+(n++),date:x.date||'',lines})}return out}\nfunction mergeQuizCorpus(base,extra){const seen=new Set(Object.entries(base.pools).flatMap(([k,a])=>(a||[]).map(e=>k+'\\0'+e.text)));for(const [k,rows] of Object.entries(extra.pools||{})){if(k==='memory')continue;for(const e of rows||[])addPool(base.pools,k,e,seen)}base.tokens=[...new Set([...(base.tokens||[]),...(extra.tokens||[])])].slice(0,12);base.count=new Set(Object.values(base.pools).flat().map(x=>x.text)).size;return base}\nasync function loadCorpus(){let base=buildCorpus([],G);try{const scenes=await window.WareraData?.memories?.('../');if(scenes?.length)base=buildCorpus(scenes,G)}catch(e){console.warn('grow memories corpus fallback',e)}try{const q=await window.WareraData?.expandedQuiz?.('../');if(q)base=mergeQuizCorpus(base,buildCorpus(quizToScenes(q),G))}catch(e){console.warn('grow full-log corpus fallback',e)}return base}`;
-      if(!src.includes(oldLoad))throw new Error('v10 corpus patch target not found');
-      src=src.replace(oldLoad,newLoad);
-
-      const oldAsset="const N={み:'みちゃこ',も:'もっち'},ASSET='./assets/pets/common/',ROOM='./assets/room/';";
-      const newAsset=`const N={み:'みちゃこ',も:'もっち'},ASSET='./assets/pets/common/',CHAR_ASSET='./assets/pets/',ROOM='./assets/room/';
-const ADULT_PET_MAP={
-  'adult_front.png':'adult_front','adult_right.png':'adult_right','adult_left.png':'adult_left','adult_back.png':'adult_back',
-  'adult_sit_front.png':'adult_sit_front','adult_sit_back.png':'adult_sit_back','adult_cheer.png':'adult_cheer','adult_angry.png':'adult_angry',
-  'adult_pout.png':'adult_pout','adult_sad.png':'adult_sad','adult_shy.png':'adult_shy','adult_cry.png':'adult_cry',
-  'adult_lie_down.png':'adult_lie_down','adult_sleep.png':'adult_sleep','adult_troubled.png':'adult_troubled','adult_eat.png':'adult_eat',
-  'adult_bath.png':'adult_bath','adult_toilet.png':'adult_toilet','adult_head_pat.png':'adult_head_pat','adult_phone.png':'adult_phone','adult_doze_sit.png':'adult_doze_sit',
-  'adult_happy.png':'adult_front','adult_cool.png':'adult_pout','adult_tsundere.png':'adult_angry','adult_love.png':'adult_shy',
-  'stand_front.png':'adult_front','stand_left.png':'adult_left','quarter_left.png':'adult_right','stand_back.png':'adult_back','sit_sad.png':'adult_sad','crawl_angry.png':'adult_angry',
-  'hold_heart.png':'adult_shy','eat_onigiri.png':'adult_eat','eat_fish.png':'adult_eat'
-};
-const LEGACY_PET_MAP={
-  'adult_front.png':'stand_front.png','adult_right.png':'quarter_left.png','adult_left.png':'stand_left.png','adult_back.png':'stand_back.png',
-  'adult_sit_front.png':'sit_sad.png','adult_sit_back.png':'stand_back.png','adult_cheer.png':'adult_happy.png','adult_angry.png':'crawl_angry.png',
-  'adult_pout.png':'adult_cool.png','adult_sad.png':'sit_sad.png','adult_shy.png':'hold_heart.png','adult_cry.png':'sit_sad.png',
-  'adult_lie_down.png':'blanket_rest.png','adult_sleep.png':'blanket_rest.png','adult_troubled.png':'sit_sad.png','adult_eat.png':'eat_onigiri.png',
-  'adult_bath.png':'stand_front.png','adult_toilet.png':'stand_front.png','adult_head_pat.png':'hold_heart.png','adult_phone.png':'stand_front.png','adult_doze_sit.png':'sit_sad.png'
-};
-function targetPetPrefix(){return G==='も'?'mo/mocchi':'mi/michako'}
-function legacyPetFile(file){return LEGACY_PET_MAP[file]||file}
-function petStageKey(file){
-  const st=stage()[0];
-  if(st==='egg')return'egg_idle';
-  if(st==='baby'){
-    const m={'baby_idle.png':'baby_front','baby_front.png':'baby_front','baby_right.png':'baby_right','baby_left.png':'baby_left','baby_back.png':'baby_back','stand_front.png':'baby_front','stand_left.png':'baby_left','quarter_left.png':'baby_right','stand_back.png':'baby_back'};
-    return m[file]||null;
-  }
-  if(st==='child'){
-    const m={'child_plain.png':'child_front','child_happy.png':'child_cheer','child_front.png':'child_front','child_right.png':'child_right','child_left.png':'child_left','child_back.png':'child_back','child_cheer.png':'child_cheer','stand_front.png':'child_front','stand_left.png':'child_left','quarter_left.png':'child_right','stand_back.png':'child_back','adult_cheer.png':'child_cheer'};
-    if(m[file])return m[file];
-    if(['adult_eat.png','eat_onigiri.png','eat_fish.png','adult_head_pat.png','hold_heart.png'].includes(file))return'child_cheer';
-    return null;
-  }
-  return ADULT_PET_MAP[file]||null;
-}
-function petUrl(file){const key=petStageKey(file);return key?CHAR_ASSET+targetPetPrefix()+'_'+key+'.png':ASSET+legacyPetFile(file)}
-function applyPetSrc(el,file){const key=petStageKey(file),fallbackUrl=ASSET+legacyPetFile(file);if(!key){el.onerror=null;el.src=fallbackUrl;return}el.onerror=()=>{el.onerror=null;el.src=fallbackUrl};el.src=CHAR_ASSET+targetPetPrefix()+'_'+key+'.png'}
-async function petImage(file){const key=petStageKey(file);if(key){try{return await img(CHAR_ASSET+targetPetPrefix()+'_'+key+'.png')}catch(e){}}return img(ASSET+legacyPetFile(file))}`;
-      if(!src.includes(oldAsset))throw new Error('character asset patch target not found');
-      src=src.replace(oldAsset,newAsset);
-
-      src=src.replace(/function basePet\(\)\{.*?\}\nfunction currentPet/s,`function basePet(){const st=stage()[0];if(st==='egg')return'egg_idle.png';if(st==='baby')return'baby_front.png';if(st==='child')return S.childType==='affection'?'child_cheer.png':'child_front.png';return'adult_front.png'}\nfunction currentPet`);
-      src=src.replace(/function currentPet\(\)\{.*?\}\nfunction reactionPet/s,`function currentPet(){const st=stage()[0];if(st==='egg')return'egg_idle.png';if(isAsleep())return st==='adult'?'adult_sleep.png':'blanket_rest.png';const m=moment();if(m.key==='play'&&minsSince('play')>300)return st==='adult'?'adult_sad.png':basePet();return basePet()}\nfunction reactionPet`);
-      src=src.replace(/function reactionPet\(a,repeat,rare\)\{.*?\}\nfunction setPet/s,`function reactionPet(a,repeat,rare){const st=stage()[0];if(st==='egg')return'';if(st==='baby'){if(a==='play')return Math.random()<.5?'baby_left.png':'baby_right.png';return'baby_front.png'}if(st==='child'){if(['feed','play','pat'].includes(a))return'child_cheer.png';if(a==='sleep')return'blanket_rest.png';return'child_front.png'}if(a==='feed')return'adult_eat.png';if(a==='bath')return'adult_bath.png';if(a==='toilet')return'adult_toilet.png';if(a==='pat')return rare?'adult_shy.png':'adult_head_pat.png';if(a==='sleep')return'adult_sleep.png';if(a==='play')return Math.random()<.45?'adult_cheer.png':Math.random()<.5?'adult_left.png':'adult_right.png';if(repeat>=4)return'adult_angry.png';return''}\nfunction setPet`);
-      src=src.replace(/function setPet\(file,ms=0,anim=''\)\{.*?\}\nfunction recordRecent/s,`function setPet(file,ms=0,anim=''){const el=$('g12pet');if(!el)return;const shown=stage()[0]==='egg'?'egg_idle.png':file;applyPetSrc(el,shown);if(anim){el.classList.remove('bounce','wiggle','squish');void el.offsetWidth;el.classList.add(anim);setTimeout(()=>el.classList.remove(anim),650)}if(ms)setTimeout(()=>{const x=$('g12pet');if(x)applyPetSrc(x,stage()[0]==='egg'?'egg_idle.png':currentPet())},ms)}\nfunction recordRecent`);
-
-      src=src.replace(/function idleOptions\(\)\{.*?return a\}/s,`function idleOptions(){const st=stage()[0],p=S.personality||'',child=S.childType||'';if(st==='egg')return[{f:'egg_idle.png',a:'wiggle',w:5,fx:''},{f:'egg_idle.png',a:'squish',w:2,fx:'…'},{f:'egg_idle.png',a:'wiggle',w:1,fx:'？'}];if(isAsleep())return[{f:st==='adult'?'adult_sleep.png':'blanket_rest.png',a:'idle-breathe',w:7,fx:''},{f:st==='adult'?'adult_sleep.png':'blanket_rest.png',a:'idle-doze',w:3,fx:'Zzz'},{f:st==='adult'?'adult_sleep.png':'blanket_rest.png',a:'wiggle',w:1,fx:'…'}];if(st==='baby')return[{f:'baby_front.png',a:'idle-breathe',w:7},{f:'baby_left.png',a:'idle-shuffle',w:2},{f:'baby_right.png',a:'idle-shuffle',w:2},{f:'baby_back.png',a:'idle-peek',w:1}];if(st==='child'){const a=[{f:'child_front.png',a:'idle-breathe',w:6},{f:'child_left.png',a:'idle-shuffle',w:2},{f:'child_right.png',a:'idle-shuffle',w:2},{f:'child_back.png',a:'idle-peek',w:1},{f:'child_cheer.png',a:'bounce',w:child==='affection'?2.5:1}];return a}let a=[{f:'adult_front.png',a:'idle-breathe',w:5},{f:'adult_left.png',a:'idle-shuffle',w:2.4},{f:'adult_right.png',a:'idle-shuffle',w:2.4},{f:'adult_back.png',a:'idle-breathe',w:1.2},{f:'adult_sit_front.png',a:'idle-breathe',w:2},{f:'adult_sit_back.png',a:'idle-peek',w:.8},{f:'adult_phone.png',a:'idle-breathe',w:1.5},{f:'adult_doze_sit.png',a:'idle-doze',w:1.4,fx:'…'},{f:'adult_lie_down.png',a:'idle-breathe',w:1},{f:'adult_troubled.png',a:'idle-doze',w:.6,fx:'…'}];if(p==='dere')a.push({f:'adult_shy.png',a:'squish',w:2.6,fx:'♡'},{f:'adult_cheer.png',a:'bounce',w:1.8,fx:'♡'});if(p==='aloof')a.push({f:'adult_back.png',a:'idle-breathe',w:3.5},{f:'adult_left.png',a:'idle-shuffle',w:2.5},{f:'adult_pout.png',a:'idle-doze',w:1.2,fx:'…'},{f:'adult_shy.png',a:'squish',w:.35,fx:'♡'});if(p==='tsundere')a.push({f:'adult_angry.png',a:'idle-shuffle',w:1.4,fx:'…'},{f:'adult_pout.png',a:'idle-doze',w:2},{f:'adult_back.png',a:'idle-breathe',w:2},{f:'adult_shy.png',a:'squish',w:.7,fx:'♡'});return a}`);
-
-      src=src.replace("const pet=await img(ASSET+currentPet());","const pet=await petImage(currentPet());");
-      src=src.replace("today=()=>new Date().toISOString().slice(0,10)","today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}");
-      src=src.replace("function ageDays(){return Math.max(0,Math.floor((new Date()-new Date((S.born||today())+'T00:00:00'))/864e5))}","function ageDays(){return Math.max(1,Math.floor((new Date()-new Date((S.born||today())+'T00:00:00'))/864e5)+1)}");
-      src=src.replace("document.querySelector('.conversation-shell')?.append(x);wire()","(document.querySelector('.conversation-shell')||document.querySelector('main')||document.body).append(x);wire()");
-      src=src.replace('ログから拾った反応候補','ログ由来の反応候補');
-
-      // v10-5: less task-like care UI, quieter early stages, clearer favorites/memories, fixed character scale.
-      src=src.replace(".g12action.rec{background:#111;color:#fff}",".g12action.rec{background:#fff;color:#111}");
-      src=src.replace(".g12action.rec small{color:#ddd}",".g12action.rec small{color:#777}");
-      src=src.replace(".g12like.liked{background:#111;color:#fff}",".g12like.liked{background:#fff;color:#111;box-shadow:inset 0 0 0 1px #111}");
-      src=src.replace(".s-egg .g12pet{width:120px}.s-baby .g12pet{width:150px}.s-child .g12pet{width:190px}.s-adult .g12pet{width:225px}",".s-egg .g12pet,.s-baby .g12pet,.s-child .g12pet,.s-adult .g12pet{width:175px}");
-      src=src.replace("S.lastSpeech=S.lastSpeech||'……おけけ？';updateReturnTrait()","S.lastSpeech=S.lastSpeech||'……おけけ？';if(S.memoryEnabled==null)S.memoryEnabled=true;updateReturnTrait()");
-      src=src.replace("function maybeMemory(force=false){if(!C?.pools?.memory?.length)return null;if(!force&&Math.random()>.045)return null;const e=weightedPick(C.pools.memory,'memory'),sc=C.sceneMap.get(String(e.sceneId));if(!sc)return null;currentMemory=sc;return{entry:e,scene:sc}}","function maybeMemory(force=false){if(!C?.pools?.memory?.length)return null;if(!force&&S.memoryEnabled===false)return null;if(!force&&Math.random()>.045)return null;const e=weightedPick(C.pools.memory,'memory'),sc=C.sceneMap.get(String(e.sceneId));if(!sc)return null;currentMemory=sc;return{entry:e,scene:sc}}" );
-      src=src.replace("<button class=\"g12mini\" id=\"g12memoryBtn\">記憶をよぎらせる</button>","<button class=\"g12mini\" id=\"g12memoryBtn\">記憶：ON</button>");
-
-      src=src.replace(/async function act\(a\)\{.*?\}\nconst EGG=/s,`function earlySpeech(a,e){const st=stage()[0];if(st!=='baby')return{text:e?.text||'',entry:e||null};const bases={idle:['…','ん。','ふむ。'],feed:['もぐ。','んま。','ごはん。'],play:['…！','きゃ。','ふふ。'],pat:['んふ。','…♡','ぬくい。'],bath:['ふろ。','ぷは。','ほかほか。'],toilet:['すっきり。','…'],sleep:['ねむ。','…ねる。','すや。'],wake:['おきた。','…ん。'],return:['きた。','…！']};const base=pick(bases[a]||bases.idle),raw=cleanText(e?.text||'').replace(/\\s+/g,' '),canMix=raw&&raw.length<=14,rate=a==='idle'?.22:.38;if(canMix&&Math.random()<rate)return{text:base+' '+raw,entry:e};return{text:base,entry:null}}\nasync function act(a){if(stage()[0]==='egg')return;const sleeping=isAsleep();if(sleeping&&a!=='sleep'){const e=entryFor('sleep'),sp=earlySpeech('sleep',e);S.lastSpeech=sp.text;currentSpeechEntry=sp.entry;recordRecent('speech',S.lastSpeech);await save();render();return}if(a==='sleep'&&sleeping){if(canWakeNow()){S.manualSleepUntil=0;S.morningWakeDate=today();const r=contextualSpeech('wake',true,0),sp=earlySpeech('wake',r.entry);S.lastSpeech=sp.text;currentSpeechEntry=sp.entry;recordRecent('speech',S.lastSpeech);await save();render();setPet('stand_front.png',900,'bounce')}else{const e=entryFor('sleep'),sp=earlySpeech('sleep',e);S.lastSpeech=sp.text;currentSpeechEntry=sp.entry;recordRecent('speech',S.lastSpeech);await save();render()}return}if(a==='sleep'&&!canSleepNow()){const e=entryFor('idle'),sp=earlySpeech('idle',e);S.lastSpeech=sp.text;currentSpeechEntry=sp.entry;recordRecent('speech',S.lastSpeech);await save();render();return}const before=stage()[0],m=moment(),matched=m.action===a,rep=repeats(a);S.totalCare=Number(S.totalCare||0)+1;S.actions[a]=Number(S.actions[a]||0)+1;S.lastActionAt[a]=now();S.experience=Number(S.experience||0)+experienceGain(a,matched,rep);applyTraits(a,matched,rep);if(a==='feed'){S.poopDueAt=now()+(90+Math.random()*150)*60000}if(a==='toilet'){S.poop=false;S.poopDueAt=0}if(a==='sleep'){markNight();S.manualSleepUntil=nextNine();S.morningWakeDate=''}const r=contextualSpeech(a,matched,rep),sp=earlySpeech(a,r.entry);S.lastSpeech=sp.text;currentSpeechEntry=sp.entry;S.recent.push({at:now(),type:'action',action:a,text:S.lastSpeech});if(S.recent.length>80)S.recent=S.recent.slice(-80);resolveEvolution();stageChanged(before);maybeMemory();await save();render();const rf=reactionPet(a,rep,r.rare);if(rf)setPet(rf,1250,a==='play'?'bounce':a==='pat'?'squish':'wiggle')}\nconst EGG=`);
-      src=src.replace(/async function eggAct\(a\)\{.*?\}\nfunction profileLines/s,`async function eggAct(a){const before=stage()[0];S.eggActions[a]=Number(S.eggActions[a]||0)+1;S.totalCare=Number(S.totalCare||0)+1;S.experience+=1;const voice={warm:['……','…ぬく。'],call:['…？','……！'],tap:['ぴく。','…！'],hum:['♪','……♪'],listen:['……','（じー）'],word:['…！','？']}[a]||['……'];S.lastSpeech=pick(voice);currentSpeechEntry=null;recordRecent('speech',S.lastSpeech);resolveEvolution();stageChanged(before);await save();render();setPet(basePet(),700,'wiggle')}\nfunction profileLines`);
-
-      src=src.replace(/function actionButtons\(\)\{.*?\}\nfunction render/s,`function actionButtons(){const m=moment();if(stage()[0]==='egg'){return\`<div class="g12action-grid">\${Object.entries(EGG).slice(0,4).map(([k,v])=>\`<button class="g12action" data-e="\${k}"><i>\${v[0]}</i><b>\${v[1]}</b></button>\`).join('')}</div><div class="g12context">\${Object.entries(EGG).slice(4).map(([k,v])=>\`<button data-e="\${k}">\${v[0]} \${v[1]}</button>\`).join('')}</div>\`}const asleep=isAsleep(),d={feed:['🍚','ごはん','食べさせる'],play:['🎮','あそぶ','ちょっかい出す'],pat:['💗','愛でる','とりあえず触る'],bath:['🫧','おふろ','カラダ・アラウ']};let h=\`<div class="g12action-grid">\${Object.entries(d).map(([k,v])=>\`<button class="g12action" data-a="\${k}" \${asleep?'disabled':''}><i>\${v[0]}</i><b>\${v[1]}</b><small>\${asleep?'ねてる':v[2]}</small></button>\`).join('')}</div>\`;const extra=[];if(S.poop)extra.push(\`<button data-a="toilet">🚽 かたづける</button>\`);if(canSleepNow()||asleep)extra.push(\`<button data-a="sleep">\${asleep?(canWakeNow()?'☀️ 起こす':'😴 ねてる'):'🌙 ねる'}</button>\`);if(extra.length)h+=\`<div class="g12context">\${extra.join('')}</div>\`;return h}\nfunction render`);
-      src=src.replace("const liked=!!(currentSpeechEntry&&S.favoritePhrases?.[currentSpeechEntry.text]);$('g12like').disabled=!currentSpeechEntry;$('g12like').classList.toggle('liked',liked);$('g12like').setAttribute('aria-pressed',liked?'true':'false');$('g12like').textContent=liked?'♥ この言い方すき':'♡ この言い方すき';renderAbout();save()","const speechText=cleanText(S.lastSpeech||''),entryText=cleanText(currentSpeechEntry?.text||''),likeable=!!entryText&&speechText.includes(entryText),liked=!!(likeable&&S.favoritePhrases?.[entryText]);$('g12like').disabled=!likeable;$('g12like').classList.toggle('liked',liked);$('g12like').setAttribute('aria-pressed',liked?'true':'false');$('g12like').textContent=liked?'♥ すきにした':'♡ この言い方すき';$('g12memoryBtn').textContent='記憶：'+(S.memoryEnabled===false?'OFF':'ON');renderAbout();save()");
-      src=src.replace("$('g12memoryBtn').onclick=()=>{touchIdle();const mem=maybeMemory(true);if(mem){S.lastSpeech=mem.entry.text;currentSpeechEntry=mem.entry;render()}}","$('g12memoryBtn').onclick=async()=>{touchIdle();S.memoryEnabled=S.memoryEnabled===false;currentMemory=null;await save();render()}");
-
-      src=src.replace(/function idle\(\)\{.*?\}\nasync function boot/s,`function idle(){if(!S||!$('g12pet'))return;if(now()<idleNextAt)return;const st=stage()[0],sleeping=isAsleep();const o=weightedIdlePick(idleOptions());idlePose=o.f;lastIdle=now();idleNextAt=now()+(sleeping?9000:6500)+Math.random()*(sleeping?9000:8500);const img=$('g12pet');img.classList.remove('bounce','wiggle','squish','idle-breathe','idle-peek','idle-doze','idle-shuffle');setPet(o.f,0,'');if(o.a){void img.offsetWidth;img.classList.add(o.a);if(!o.a.startsWith('idle-'))setTimeout(()=>img.classList.remove(o.a),700)}if(o.fx)showIdleFx(o.fx);const talkChance=st==='baby'?.10:st==='child'?.22:.34;if(st!=='egg'&&!sleeping&&Math.random()<talkChance){const e=entryFor(idleSpeechKey()),sp=earlySpeech('idle',e);if(sp.text){S.lastSpeech=sp.text;currentSpeechEntry=sp.entry;recordRecent('speech',sp.text);$('g12speech').textContent=sp.text;render();save()}}}\nasync function boot`);
-      src=src.replace("if(!S.lastSpeech||S.lastSpeech==='……おけけ？'){const e=entryFor(new Date().getHours()<10?'morning':'idle');S.lastSpeech=e.text;currentSpeechEntry=e}else currentSpeechEntry={text:S.lastSpeech,date:'',sceneId:''};render();await save()","if(stage()[0]==='egg'){S.lastSpeech='……';currentSpeechEntry=null}else if(stage()[0]==='baby'&&(!S.lastSpeech||S.lastSpeech==='……おけけ？'||String(S.lastSpeech).length>18)){S.lastSpeech='…';currentSpeechEntry=null}else if(!S.lastSpeech||S.lastSpeech==='……おけけ？'){const e=entryFor(new Date().getHours()<10?'morning':'idle');S.lastSpeech=e.text;currentSpeechEntry=e}else currentSpeechEntry={text:S.lastSpeech,date:'',sceneId:''};render();await save()");
-
-      const blob=new Blob([src],{type:'text/javascript'}),url=URL.createObjectURL(blob),s=document.createElement('script');
-      s.src=url;s.onload=()=>URL.revokeObjectURL(url);s.onerror=()=>{URL.revokeObjectURL(url);fallback()};document.head.append(s);
-    }catch(e){console.error(e);fallback()}
-  })();
+  const VERSION='20260926-refactor-1';
+  const load=()=>import(`./app/main.js?v=${VERSION}`).catch(err=>{
+    console.error('われわれ育成所の読み込みに失敗',err);
+    const host=document.querySelector('.conversation-shell')||document.body;
+    if(host&&!document.querySelector('.grow-boot-error')){
+      const p=document.createElement('p');p.className='grow-boot-error';p.textContent='育成所を読み込めなかった。再読み込みしてみて。';host.append(p);
+    }
+  });
+  if(document.querySelector('link[data-grow-app-style]')){load();return}
+  const link=document.createElement('link');link.rel='stylesheet';link.href=`./app/styles.css?v=${VERSION}`;link.dataset.growAppStyle='1';link.onload=load;link.onerror=load;document.head.append(link);
 })();
