@@ -42,12 +42,12 @@
     queueMicrotask(()=>{restoring=false});
   }
 
-  function lockVisiblePet(ms=HOLD_MS){
+  function lockVisiblePet(){
     if(!isAdult())return;
     const img=document.getElementById('g12pet');
     if(!img?.src)return;
     domLockSrc=img.src;
-    domLockUntil=Date.now()+ms;
+    domLockUntil=Date.now()+HOLD_MS;
     restoreLockedPet();
   }
 
@@ -56,9 +56,8 @@
     if(!b||b.disabled||!isAdult())return;
     releaseDomLock();
     window.__wareraAdultMotionReleaseHold?.();
-    // Keep the pose currently on screen just long enough for act() to choose
-    // its care reaction. render() briefly writes the normal pose first.
-    lockVisiblePet(900);
+    setTimeout(lockVisiblePet,80);
+    setTimeout(lockVisiblePet,220);
   },true);
 
   const domObserver=new MutationObserver(mutations=>{
@@ -151,14 +150,9 @@
       const adult=isAdult();
       const timed=Number(ms)||0;
       if(adult&&timed>0&&HOLD_FILES.has(file)){
-        // A real care reaction is ready. Drop the short transition lock before
-        // drawing it, then lock the reaction itself for the normal hold time.
-        releaseDomLock();
         heldFile=file;
         heldUntil=Date.now()+HOLD_MS;
-        const result=originalSetPet(file,HOLD_MS,anim);
-        setTimeout(()=>lockVisiblePet(HOLD_MS),0);
-        return result;
+        return originalSetPet(file,HOLD_MS,anim);
       }
       if(adult&&holdActive()&&file!==heldFile){
         return originalSetPet(heldFile,0,'');
