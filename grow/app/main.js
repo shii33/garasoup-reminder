@@ -1,9 +1,9 @@
-import './data-service.js?v=20260927-life-5';
-import {GrowModel,getViewer} from './core.js?v=20260927-life-5';
-import {CreatureLife} from './life.js?v=20260927-life-5';
-import {SourceLog} from './source-log.js?v=20260927-life-5';
-import {GrowView} from './view.js?v=20260927-life-5';
-import {ShareService} from './share.js?v=20260927-life-5';
+import './data-service.js?v=20260927-life-6';
+import {GrowModel,getViewer} from './core.js?v=20260927-life-6';
+import {CreatureLife} from './life.js?v=20260927-life-6';
+import {SourceLog} from './source-log.js?v=20260927-life-6';
+import {GrowView} from './view.js?v=20260927-life-6';
+import {ShareService} from './share.js?v=20260927-life-6';
 
 let model=null,life=null,view=null;
 const sourceLog=new SourceLog();
