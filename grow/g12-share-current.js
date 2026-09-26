@@ -4,7 +4,6 @@
   window.__wareraG12ShareBooted=true;
 
   const H2C='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-  let cachedBlob=null;
   let cachedFile=null;
   let renderPromise=null;
   let refreshTimer=0;
@@ -130,9 +129,7 @@
     if(renderPromise)return renderPromise;
     if(!force&&Date.now()-lastRenderAt<1200&&cachedFile)return cachedFile;
     renderPromise=(async()=>{
-      const blob=await makeShareBlob();
-      cachedBlob=blob;
-      cachedFile=makeFile(blob);
+      cachedFile=makeFile(await makeShareBlob());
       lastRenderAt=Date.now();
       return cachedFile;
     })().catch(err=>{
@@ -153,13 +150,9 @@
     scheduleRefresh(200);
 
     const pet=document.getElementById('g12pet');
-    if(pet){
-      new MutationObserver(()=>scheduleRefresh(350)).observe(pet,{attributes:true,attributeFilter:['src']});
-    }
+    if(pet)new MutationObserver(()=>scheduleRefresh(350)).observe(pet,{attributes:true,attributeFilter:['src']});
     const speech=document.getElementById('g12speech');
-    if(speech){
-      new MutationObserver(()=>scheduleRefresh(350)).observe(speech,{childList:true,subtree:true,characterData:true});
-    }
+    if(speech)new MutationObserver(()=>scheduleRefresh(350)).observe(speech,{childList:true,subtree:true,characterData:true});
     document.addEventListener('click',e=>{
       if(e.target.closest?.('#g12actions [data-a]'))scheduleRefresh(500);
     },true);
