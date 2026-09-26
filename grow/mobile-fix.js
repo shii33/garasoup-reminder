@@ -77,4 +77,11 @@
     s.dataset.growObservationStatus='1';
     document.head.append(s);
   }
+  if(!document.querySelector('script[data-grow-adult-motion]')){
+    const s=document.createElement('script');
+    s.src='./adult-motion.js?v=20260926-1';
+    s.defer=true;
+    s.dataset.growAdultMotion='1';
+    document.head.append(s);
+  }
 })();
