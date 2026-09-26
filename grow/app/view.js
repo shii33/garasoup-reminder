@@ -1,4 +1,4 @@
-import {NAMES,petUrl,cleanText} from './core.js?v=20260927-life-5';
+import {NAMES,petUrl,cleanText} from './core.js?v=20260927-life-6';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const enc=s=>encodeURIComponent(String(s??''));
@@ -42,7 +42,7 @@ export class GrowView{
     const m=this.model,s=m.state;if(m.stageKey()==='egg'){const egg={warm:['🫶','あたためる'],call:['📣','名前を呼ぶ'],tap:['👉','つんつん'],hum:['🎵','うたう'],listen:['👂','ようすを見る'],word:['🌀','われわれ語']};return`<div class="g12action-grid">${Object.entries(egg).slice(0,4).map(([k,v])=>`<button class="g12action" data-e="${k}"><i>${v[0]}</i><b>${v[1]}</b></button>`).join('')}</div><div class="g12context">${Object.entries(egg).slice(4).map(([k,v])=>`<button data-e="${k}">${v[0]} ${v[1]}</button>`).join('')}</div>`}
     if(this.life.isOuting())return`<div class="g12recall"><b>おでかけ中。</b><span>呼べばすぐ帰ってくる。</span><button type="button" data-recall>呼び戻す</button></div>`;
     const asleep=m.isAsleep(),actions=[['feed','🍚','ごはん','食べさせる'],['play','🎮','あそぶ','いっしょに遊ぶ'],['pat','💗','愛でる','とりあえず触る'],['bath','🫧','おふろ','カラダ・アラウ']];
-    let html=`<div class="g12action-grid">${actions.map(([k,icon,label,sub])=>`<button class="g12action" ${k==='play'?'data-play-menu':'data-a="'+k+'"'} ${asleep?'disabled':''}><i>${icon}</i><b>${label}</b><small>${asleep?'ねてる':sub}</small></button>`).join('')}</div>`;const extra=[];if(s.poop)extra.push('<button data-a="toilet">🚽 かたづける</button>');if(m.canSleepNow()||asleep)extra.push(`<button data-a="sleep">${asleep?(m.canWakeNow()?'☀️ 起こす':'😴 ねてる'):'🌙 ねる'}</button>`);if(extra.length)html+=`<div class="g12context">${extra.join('')}</div>`;return html
+    let html=`<div class="g12action-grid">${actions.map(([k,icon,label,sub])=>`<button class="g12action" ${k==='play'?'data-play-menu':'data-a="'+k+'"'} ${asleep?'disabled':''}><i>${icon}</i><b>${label}</b><small>${asleep?'ねてる':sub}</small></button>`).join('')}</div>`;const extra=[];if(s.poop)extra.push('<button data-a="toilet">🚽 かたづける</button>');if(m.canSleepNow()||asleep)extra.push(`<button data-a="sleep">${asleep?(m.canWakeNow()?'☀️ 起こす':m.canNightPlay()?'🌙 今だけ遊ぼ':'😴 ねてる'):'🌙 ねる'}</button>`);if(extra.length)html+=`<div class="g12context">${extra.join('')}</div>`;return html
   }
   renderFinds(){const rows=this.life.finds(),all=rows.length,count=this.$('g12findCount');count.textContent=all?`${all}こ`:'';const box=this.$('g12finds');if(!rows.length){box.innerHTML='<p class="g12empty">まだなんもない。</p>';return}box.innerHTML=rows.map(x=>`<button class="g12find" data-find="${esc(x.id)}"><span class="g12findicon">${esc(x.icon||'•')}</span><span><b>${esc(x.title)}</b><small>${esc(x.subtitle||'')}</small></span><i>›</i></button>`).join('')}
   openModal(html){const modal=this.$('g12modal'),dlg=this.$('g12dlg');dlg.innerHTML=html;modal.hidden=false}
