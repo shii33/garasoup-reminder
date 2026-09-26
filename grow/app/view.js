@@ -1,8 +1,11 @@
-import {NAMES,petUrl,cleanText} from './core.js?v=20260926-life-2';
+import {NAMES,petUrl,cleanText} from './core.js?v=20260926-life-3';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const enc=s=>encodeURIComponent(String(s??''));
 const dec=s=>decodeURIComponent(String(s??''));
+const uniq=a=>[...new Set((a||[]).map(x=>cleanText(x)).filter(Boolean))];
+const shuffled=a=>{const out=[...(a||[])];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}return out};
+const sample=(a,n)=>shuffled(uniq(a)).slice(0,n);
 
 export class GrowView{
   constructor(model,sourceLog,life){this.model=model;this.sourceLog=sourceLog;this.life=life;this.heldPose='';this.heldUntil=0;this.idleFxTimer=0;this.activity=null;this.mount();this.bindSourceButton()}
@@ -39,7 +42,14 @@ export class GrowView{
   openModal(html){const modal=this.$('g12modal'),dlg=this.$('g12dlg');dlg.innerHTML=html;modal.hidden=false}
   closeModal(){this.$('g12modal').hidden=true;this.activity=null}
   showPlayMenu(){this.activity={type:'menu'};this.openModal(`<div class="g12modalhead"><div><b>あそぶ</b><small>なにする？</small></div><button data-modal-close>×</button></div><div class="g12playmenu"><button data-play-mode="tease"><span>🎮</span><b>いつものちょっかい</b><small>とりあえず構う。</small></button><button data-play-mode="words"><span>💬</span><b>ことばをくっつける</b><small>左・まんなか・右を1つずつ。</small></button><button data-play-mode="quiz"><span>❓</span><b>続きあて</b><small>この次なんて返した？</small></button></div>`)}
-  showWordGame(game){this.activity={type:'word',game,selections:{front:'',middle:'',end:''}};this.renderWordGame()}
+  randomizeWordGame(game){
+    const short=(this.model.corpus?.pools?.short||[]).map(x=>cleanText(x?.text||'')).filter(x=>x&&x.length<=18),tokens=this.model.corpus?.tokens||[],seed=cleanText(game?.seed||'');
+    const frontPool=[...(game?.front||[]),...tokens,...short.filter(x=>x.length<=10)],endPool=[...(game?.end||[]),...short,...tokens];
+    let front=sample(frontPool,7),middle=sample(game?.middle||[],7),end=sample(endPool,7);
+    if(seed){if(!front.includes(seed))front=[seed,...front].slice(0,7);if(!end.includes(seed))end=[...end.slice(0,6),seed]}
+    return{...game,front,middle,end}
+  }
+  showWordGame(game){const randomized=this.randomizeWordGame(game||{});this.activity={type:'word',game:randomized,selections:{front:'',middle:'',end:''}};this.renderWordGame()}
   renderWordGame(){const a=this.activity;if(!a||a.type!=='word')return;const section=(slot,label,rows)=>`<div class="g12wordslot"><b>${label}</b><div>${(rows||[]).map(v=>`<button class="${a.selections[slot]===v?'is-selected':''}" data-word-choice data-slot="${slot}" data-v="${enc(v)}">${esc(v)}</button>`).join('')}</div></div>`,preview=this.life.wordPhrase(a.selections);this.openModal(`<div class="g12modalhead"><div><b>ことばをくっつける</b><small>左・つなぎ・右</small></div><button data-modal-close>×</button></div><div class="g12wordgame">${section('front','左',a.game.front)}${section('middle','つなぎ',a.game.middle)}${section('end','右',a.game.end)}<div class="g12wordpreview">${preview?esc(preview):'3つ選ぶとここにできる。'}</div><button class="g12primary" data-word-finish ${a.selections.front&&a.selections.middle&&a.selections.end?'':'disabled'}>これでいく</button></div>`)}
   chooseWord(slot,value){if(!this.activity||this.activity.type!=='word')return;this.activity.selections[slot]=dec(value);this.renderWordGame()}
   wordSelection(){return this.activity?.type==='word'?{...this.activity.selections}:null}
