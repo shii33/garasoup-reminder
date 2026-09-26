@@ -7,7 +7,7 @@
   const HOLD_FILES=new Set([
     'adult_eat.png','adult_bath.png','adult_toilet.png','adult_head_pat.png','adult_shy.png',
     'adult_cheer.png','adult_angry.png','adult_pout.png','adult_troubled.png','adult_sleep.png',
-    'adult_left.png','adult_right.png'
+    'adult_left.png','adult_right.png','adult_front.png'
   ]);
 
   function isAdult(){
@@ -25,6 +25,12 @@
     let heldFile='';
     let heldUntil=0;
 
+    function holdActive(){
+      if(!heldFile)return false;
+      if(Date.now()>=heldUntil){heldFile='';heldUntil=0;return false}
+      return true;
+    }
+
     window.reactionPet=function(a,repeat,rare){
       if(!isAdult())return originalReaction(a,repeat,rare);
       const r=Math.random();
@@ -36,9 +42,7 @@
         if(repeat>=4)return r<.6?'adult_pout.png':'adult_troubled.png';
         return r<.86?'adult_bath.png':r<.94?'adult_cheer.png':'adult_shy.png';
       }
-      if(a==='toilet'){
-        return r<.86?'adult_toilet.png':r<.94?'adult_troubled.png':'adult_front.png';
-      }
+      if(a==='toilet')return r<.86?'adult_toilet.png':r<.94?'adult_troubled.png':'adult_front.png';
       if(a==='pat'){
         if(rare)return'adult_shy.png';
         if(repeat>=5)return r<.55?'adult_angry.png':'adult_pout.png';
@@ -55,21 +59,26 @@
     };
 
     window.setPet=function(file,ms=0,anim=''){
-      if(isAdult()&&ms>0&&HOLD_FILES.has(file)){
+      const adult=isAdult();
+      const timed=Number(ms)||0;
+      if(adult&&timed>0&&HOLD_FILES.has(file)){
         heldFile=file;
         heldUntil=Date.now()+HOLD_MS;
-        ms=Math.max(Number(ms)||0,HOLD_MS);
+        return originalSetPet(file,HOLD_MS,anim);
+      }
+      if(adult&&holdActive()&&file!==heldFile){
+        return originalSetPet(heldFile,0,'');
       }
       return originalSetPet(file,ms,anim);
     };
 
     window.currentPet=function(){
-      if(isAdult()&&heldFile&&Date.now()<heldUntil)return heldFile;
-      if(heldFile&&Date.now()>=heldUntil){heldFile='';heldUntil=0}
+      if(isAdult()&&holdActive())return heldFile;
       return originalCurrentPet();
     };
 
     window.idleOptions=function(){
+      if(isAdult()&&holdActive())return[{f:heldFile,a:'idle-breathe',w:1,fx:''}];
       const base=originalIdleOptions();
       if(!isAdult()||!Array.isArray(base))return base;
       return base.concat([
