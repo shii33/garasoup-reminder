@@ -141,8 +141,8 @@
       }
       if(a==='play'){
         if(repeat>=5)return r<.48?'adult_angry.png':r<.78?'adult_pout.png':'adult_troubled.png';
-        if(repeat>=3)return r<.34?'adult_pout.png':r<.67?'adult_left.png':'adult_right.png';
-        return r<.38?'adult_cheer.png':r<.69?'adult_left.png':'adult_right.png';
+        if(repeat>=3)return r<.34?'adult_pout.png':r<.70?'adult_cheer.png':r<.85?'adult_front.png':r<.925?'adult_left.png':'adult_right.png';
+        return r<.55?'adult_cheer.png':r<.78?'adult_front.png':r<.89?'adult_left.png':'adult_right.png';
       }
       if(a==='sleep')return'adult_sleep.png';
       return originalReaction(a,repeat,rare);
