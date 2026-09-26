@@ -23,7 +23,7 @@ function readableScene(scene){
   if((joined.match(/続きを読む/g)||[]).length>=1&&total>650)return false;
   return true;
 }
-function sceneSignature(lines){return lines.map(x=>`${x.who}\0${x.text}`).join('\1')}
+function sceneSignature(lines){return lines.map(x=>`${x.who}\u0000${x.text}`).join('\u0001')}
 
 export async function expandedMemories(home='../'){
   if(!expandedMemoriesPromise)expandedMemoriesPromise=(async()=>{
