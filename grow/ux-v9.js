@@ -1,6 +1,6 @@
 (()=>{
   if(!/\/grow\/?$/.test(location.pathname))return;
-  const VER='20260926-v10-3';
+  const VER='20260926-v10-4';
   const fallback=()=>{console.warn('われわれ育成所v10の読み込みに失敗');};
   (async()=>{
     try{
@@ -17,7 +17,7 @@
       src=src.replace(oldLoad,newLoad);
 
       const oldAsset="const N={み:'みちゃこ',も:'もっち'},ASSET='./assets/pets/common/',ROOM='./assets/room/';";
-      const newAsset=`const N={み:'みちゃこ',も:'もっち'},ASSET='./assets/pets/common/',CHAR_ASSET='./assets/pets/characters/',ROOM='./assets/room/';
+      const newAsset=`const N={み:'みちゃこ',も:'もっち'},ASSET='./assets/pets/common/',CHAR_ASSET='./assets/pets/',ROOM='./assets/room/';
 const ADULT_PET_MAP={
   'adult_front.png':'adult_front','adult_right.png':'adult_right','adult_left.png':'adult_left','adult_back.png':'adult_back',
   'adult_sit_front.png':'adult_sit_front','adult_sit_back.png':'adult_sit_back','adult_cheer.png':'adult_cheer','adult_angry.png':'adult_angry',
@@ -35,7 +35,7 @@ const LEGACY_PET_MAP={
   'adult_lie_down.png':'blanket_rest.png','adult_sleep.png':'blanket_rest.png','adult_troubled.png':'sit_sad.png','adult_eat.png':'eat_onigiri.png',
   'adult_bath.png':'stand_front.png','adult_toilet.png':'stand_front.png','adult_head_pat.png':'hold_heart.png','adult_phone.png':'stand_front.png','adult_doze_sit.png':'sit_sad.png'
 };
-function targetPetPrefix(){return G==='も'?'mocchi':'michako'}
+function targetPetPrefix(){return G==='も'?'mo/mocchi':'mi/michako'}
 function legacyPetFile(file){return LEGACY_PET_MAP[file]||file}
 function petStageKey(file){
   const st=stage()[0];
