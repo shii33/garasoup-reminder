@@ -1,4 +1,4 @@
-import {NAMES,cleanText,now,today} from './core.js?v=20260926-life-1';
+import {cleanText,now,today} from './core.js?v=20260926-life-1';
 
 const uniq=a=>[...new Set((a||[]).map(x=>String(x||'').trim()).filter(Boolean))];
 const pick=a=>a?.length?a[Math.floor(Math.random()*a.length)]:null;
@@ -88,6 +88,7 @@ export class CreatureLife{
   }
   async advanceIdle(){
     this.ensure();const returned=await this.tick();if(returned)return returned;if(this.isOuting())return{outing:true};
+    if(this.model.stageKey()==='egg'){const event=this.weightedEvent();this.model.state.lastSpeech='……';this.model.currentSpeechEntry=null;this.setEvent(event.status||'🥚 中でなんかやってる','egg',event.pose||'egg_idle.png');await this.model.save();return{...event,speech:'……'}}
     if(this.shouldStartOuting()){await this.startOuting();return{outing:true,started:true}}
     const rareChance=.012+this.maturity()*.004;
     let event=null;
@@ -97,7 +98,7 @@ export class CreatureLife{
     let found=null;if(this.model.stageKey()!=='egg'&&Math.random()<.007+this.maturity()*.001){found=this.makeItem('idle');this.addItem(found)}
     await this.model.save();return{...event,speech:this.model.state.lastSpeech,found}
   }
-  shouldStartOuting(){const st=this.model.stageKey(),l=this.life();if(!['child','adult'].includes(st)||l.outing.active||this.model.isAsleep())return false;if(now()-l.lastInteractionAt<240000)return false;if(now()-l.lastOutingAt<10800000)return false;let chance=.0012;if(l.mood==='curious')chance*=1.8;if(this.model.state.personality==='aloof')chance*=1.35;if(this.model.state.personality==='playful')chance*=1.2;return Math.random()<chance}
+  shouldStartOuting(){const st=this.model.stageKey(),l=this.life();if(!['child','adult'].includes(st)||l.outing.active||this.model.isAsleep())return false;if(now()-l.lastInteractionAt<240000)return false;if(now()-l.lastOutingAt<10800000)return false;let chance=.004*(1+this.maturity()*.08);if(l.mood==='curious')chance*=1.8;if(this.model.state.personality==='aloof')chance*=1.35;if(this.model.state.personality==='playful')chance*=1.2;return Math.random()<chance}
   async startOuting(){const l=this.life(),minutes=20+Math.random()*60;l.outing={active:true,startedAt:now(),returnAt:now()+minutes*60000};l.lastEvent={at:now(),status:'🚪 おでかけ中',kind:'outing',pose:''};await this.model.save()}
   async tick(save=true){const l=this.life();this.rotateMood();this.maybeDailyFind();if(l.outing.active&&l.outing.returnAt&&now()>=l.outing.returnAt)return this.finishOuting(save);return null}
   async recallOuting(){if(!this.isOuting())return null;return this.finishOuting(true)}
