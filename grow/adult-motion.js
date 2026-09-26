@@ -74,12 +74,13 @@
 
   function install(){
     if(window.__wareraAdultMotionInstalled)return true;
-    if(typeof window.reactionPet!=='function'||typeof window.setPet!=='function'||typeof window.idleOptions!=='function'||typeof window.currentPet!=='function')return false;
+    if(typeof window.reactionPet!=='function'||typeof window.setPet!=='function'||typeof window.idleOptions!=='function'||typeof window.currentPet!=='function'||typeof window.act!=='function')return false;
 
     const originalReaction=window.reactionPet;
     const originalSetPet=window.setPet;
     const originalIdleOptions=window.idleOptions;
     const originalCurrentPet=window.currentPet;
+    const originalAct=window.act;
     let heldFile='';
     let heldUntil=0;
 
@@ -94,6 +95,31 @@
       if(Date.now()>=heldUntil){releaseHold();return false}
       return true;
     }
+
+    window.act=async function(a){
+      let existingPoopDue=0;
+      try{
+        if(a==='feed'&&typeof S!=='undefined'&&S&&!S.poop){
+          const due=Number(S.poopDueAt||0);
+          if(due>Date.now())existingPoopDue=due;
+        }
+      }catch(e){}
+
+      const result=await originalAct(a);
+
+      if(a==='feed'&&existingPoopDue){
+        try{
+          if(typeof S!=='undefined'&&S&&!S.poop){
+            const currentDue=Number(S.poopDueAt||0);
+            if(!currentDue||currentDue>existingPoopDue){
+              S.poopDueAt=existingPoopDue;
+              if(typeof save==='function')await save();
+            }
+          }
+        }catch(e){console.warn('grow poop schedule preserve failed',e)}
+      }
+      return result;
+    };
 
     window.reactionPet=function(a,repeat,rare){
       if(!isAdult())return originalReaction(a,repeat,rare);
@@ -145,14 +171,24 @@
       if(isAdult()&&holdActive())return[{f:heldFile,a:'idle-breathe',w:1,fx:''}];
       const base=originalIdleOptions();
       if(!isAdult()||!Array.isArray(base))return base;
-      return base.concat([
+      const extra=[
+        {f:'adult_phone.png',a:'idle-breathe',w:4.5,fx:''},
+        {f:'adult_sit_front.png',a:'idle-breathe',w:2.6,fx:''},
+        {f:'adult_sit_back.png',a:'idle-peek',w:1.6,fx:''},
+        {f:'adult_doze_sit.png',a:'idle-doze',w:2.4,fx:'…'},
+        {f:'adult_lie_down.png',a:'idle-breathe',w:2.2,fx:''},
         {f:'adult_cheer.png',a:'bounce',w:.7,fx:'!'},
         {f:'adult_shy.png',a:'squish',w:.45,fx:'♡'},
         {f:'adult_pout.png',a:'idle-doze',w:.55,fx:'…'},
         {f:'adult_sad.png',a:'idle-doze',w:.35,fx:'…'},
-        {f:'adult_angry.png',a:'idle-shuffle',w:.18,fx:'!'},
-        {f:'adult_cry.png',a:'idle-doze',w:.08,fx:'…'}
-      ]);
+        {f:'adult_angry.png',a:'idle-shuffle',w:.18,fx:'!'}
+      ];
+      try{
+        if(typeof minsSince==='function'&&minsSince('pat')>720&&minsSince('play')>600){
+          extra.push({f:'adult_cry.png',a:'idle-doze',w:.65,fx:'…'});
+        }
+      }catch(e){}
+      return base.concat(extra);
     };
 
     window.__wareraAdultMotionInstalled=true;
