@@ -1,8 +1,8 @@
-import './data-service.js?v=20260926-refactor-3';
-import {GrowModel,getViewer} from './core.js?v=20260926-refactor-3';
-import {SourceLog} from './source-log.js?v=20260926-refactor-3';
-import {GrowView} from './view.js?v=20260926-refactor-3';
-import {ShareService} from './share.js?v=20260926-refactor-3';
+import './data-service.js?v=20260926-refactor-4';
+import {GrowModel,getViewer} from './core.js?v=20260926-refactor-4';
+import {SourceLog} from './source-log.js?v=20260926-refactor-4';
+import {GrowView} from './view.js?v=20260926-refactor-4';
+import {ShareService} from './share.js?v=20260926-refactor-4';
 
 let model=null,view=null;
 const sourceLog=new SourceLog();
@@ -11,16 +11,22 @@ let idlePoseTimer=0,idleSpeechTimer=0,heartbeatTimer=0,perspectiveTimer=0;
 
 const rand=(min,max)=>min+Math.random()*(max-min);
 const emptyCorpus=()=>({pools:{},sceneMap:new Map(),tokens:[],count:0});
+const timeout=(ms,value=null)=>new Promise(resolve=>setTimeout(()=>resolve(value),ms));
 const schedulePose=(min=6500,max=15000)=>{clearTimeout(idlePoseTimer);idlePoseTimer=setTimeout(()=>{if(view?.showIdlePose())share.schedule(350);schedulePose()},rand(min,max))};
 const scheduleSpeech=(min=20000,max=45000)=>{clearTimeout(idleSpeechTimer);idleSpeechTimer=setTimeout(async()=>{if(await model?.idleSpeech()){await view.render({preservePet:true});share.schedule(350)}scheduleSpeech()},rand(min,max))};
 const afterInteraction=()=>{schedulePose(6500,11000);scheduleSpeech(26000,48000)};
 
 async function loadModelFast(viewer){
   const next=new GrowModel(viewer);
-  const realLoadCorpus=next.loadCorpus.bind(next);
-  next.loadCorpus=async()=>{next.corpus=emptyCorpus()};
-  await next.load();
-  next.loadCorpus=realLoadCorpus;
+  let initial=next.readLocal();
+  if(!initial){
+    try{initial=await Promise.race([next.readDb(),timeout(900,null)])}catch{initial=null}
+  }
+  next.state=initial||next.fresh();
+  next.corpus=emptyCorpus();
+  next.migrate();
+  next.initializeSpeech();
+
   setTimeout(async()=>{
     try{
       await next.loadCorpus();
