@@ -1,9 +1,9 @@
-import './data-service.js?v=20260927-refactor-5';
-import {GrowModel,getViewer} from './core.js?v=20260927-refactor-5';
-import {CreatureLife} from './life.js?v=20260927-refactor-5';
-import {SourceLog} from './source-log.js?v=20260927-refactor-5';
-import {GrowView} from './view.js?v=20260927-refactor-5';
-import {ShareService} from './share.js?v=20260927-refactor-5';
+import './data-service.js?v=20260927-refactor-6';
+import {GrowModel,getViewer} from './core.js?v=20260927-refactor-6';
+import {CreatureLife} from './life.js?v=20260927-refactor-6';
+import {SourceLog} from './source-log.js?v=20260927-refactor-6';
+import {GrowView} from './view.js?v=20260927-refactor-6';
+import {ShareService} from './share.js?v=20260927-refactor-6';
 
 const TIMING={
   idleMin:7000,
@@ -19,8 +19,6 @@ let model=null;
 let life=null;
 let view=null;
 let idleTimer=0;
-let heartbeatTimer=0;
-let perspectiveTimer=0;
 
 const sourceLog=new SourceLog();
 const share=new ShareService();
@@ -96,15 +94,13 @@ async function switchModel(viewer){
   queueShare(250);
 }
 
-async function renderActionResult(result,{modal=null}={}){
+async function renderActionResult(result){
   await view.render({preservePet:true});
   if(result?.reaction)view.showReaction(result.reaction,result.anim);
   else if(result?.pose)view.applyLifeEvent(result);
   else if(!life.isOuting())view.applyPose(model.currentPet());
 
   if(result?.stageChanged)view.showStageUp(result.stageChanged);
-  else if(modal)modal();
-
   settleAfterReaction();
   queueShare(TIMING.shareAction);
 }
@@ -171,10 +167,10 @@ async function useQuizItem(id){
   queueShare();
 }
 
-async function useCharmItem(id){
+async function sayItem(id){
   noteInteraction();
   view.closeModal();
-  await renderLifeResult(await life.useCharmItem(id));
+  await renderLifeResult(await life.sayItem(id));
 }
 
 async function dropItem(id){
@@ -218,8 +214,8 @@ async function handleClick(event){
   const itemQuiz=target.closest('[data-item-quiz]');
   if(itemQuiz){await useQuizItem(itemQuiz.dataset.itemQuiz);return}
 
-  const itemCharm=target.closest('[data-item-charm]');
-  if(itemCharm){await useCharmItem(itemCharm.dataset.itemCharm);return}
+  const itemSay=target.closest('[data-item-say]');
+  if(itemSay){await sayItem(itemSay.dataset.itemSay);return}
 
   const itemDrop=target.closest('[data-item-drop]');
   if(itemDrop){await dropItem(itemDrop.dataset.itemDrop);return}
@@ -312,8 +308,8 @@ async function boot(){
     share.bind();
     sourceLog.load();
     scheduleIdle();
-    heartbeatTimer=setInterval(heartbeat,TIMING.heartbeat);
-    perspectiveTimer=setInterval(checkPerspective,TIMING.perspective);
+    setInterval(heartbeat,TIMING.heartbeat);
+    setInterval(checkPerspective,TIMING.perspective);
   }catch(error){
     showBootError(error);
   }
