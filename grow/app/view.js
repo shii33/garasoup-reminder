@@ -1,4 +1,4 @@
-import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-11';
+import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-12';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const enc=s=>encodeURIComponent(String(s??''));
@@ -9,8 +9,8 @@ const sample=(a,n)=>shuffled(uniq(a)).slice(0,n);
 const usefulEnding=s=>{const t=cleanText(s);return !!t&&t.length<=18&&!/^(?:w+|ｗ+|笑+|草+)$/i.test(t)&&!/^[-ー〜~!?！？。、…・]+$/.test(t)};
 const seedSlot=s=>{const t=cleanText(s);if(!t)return'end';if(t.length>10||/[！？!?。…]/.test(t))return'end';if(/^(?:w+|ｗ+|笑+|草+|うい(?:ー)?|おけ(?:ー|け)?|ほう|ふむ|そそ|あーね|なるほど?|はい|うん|ん|だん|やばっ?|かわい(?:い)?|好き|すき|フロダン)/i.test(t))return'end';return'front'};
 const FRONT_EXTRA={
-  み:['みちゃこ','今日','われわれ','この子','ガラスープ','これ','それ','さっき','明日','仕事','ごはん','ねこ'],
-  も:['もっち','今日','われわれ','この子','ガラスープ','これ','それ','さっき','明日','仕事','ごはん','ねこ']
+  み:['みちゃこ','もっち','今日','われわれ','この子','ガラスープ','これ','それ','さっき','明日','仕事','ごはん','ねこ','スマホ','おふろ','朝','夜','休み','会社','電車','家','予定','写真','ゲーム','LINE','布団','天気','眠気'],
+  も:['もっち','みちゃこ','今日','われわれ','この子','ガラスープ','これ','それ','さっき','明日','仕事','ごはん','ねこ','スマホ','おふろ','朝','夜','休み','会社','電車','家','予定','写真','ゲーム','LINE','布団','天気','眠気']
 };
 
 export class GrowView{
@@ -46,18 +46,23 @@ export class GrowView{
     let html=`<div class="g12action-grid">${actions.map(([k,icon,label,sub])=>`<button class="g12action" ${k==='play'?'data-play-menu':'data-a="'+k+'"'} ${asleep?'disabled':''}><i>${icon}</i><b>${label}</b><small>${asleep?'ねてる':sub}</small></button>`).join('')}</div>`;const extra=[];if(s.poop)extra.push('<button data-a="toilet">🚽 かたづける</button>');if(m.canSleepNow()||asleep)extra.push(`<button data-a="sleep">${asleep?(m.canWakeNow()?'☀️ 起こす':m.canNightPlay()?'🌙 今だけ遊ぼ':'😴 ねてる'):'🌙 ねる'}</button>`);if(extra.length)html+=`<div class="g12context">${extra.join('')}</div>`;return html
   }
   renderFinds(){const rows=this.life.finds(),all=rows.length,count=this.$('g12findCount');count.textContent=all?`${all}こ`:'';const box=this.$('g12finds');if(!rows.length){box.innerHTML='<p class="g12empty">まだなんもない。</p>';return}box.innerHTML=rows.map(x=>`<button class="g12find" data-find="${esc(x.id)}"><span class="g12findicon">${esc(x.icon||'•')}</span><span><b>${esc(x.title)}</b><small>${esc(x.subtitle||'')}</small></span><i>›</i></button>`).join('')}
-  openModal(html){const modal=this.$('g12modal'),dlg=this.$('g12dlg');dlg.innerHTML=html;modal.hidden=false}
+  openModal(html,{lockScroll=false}={}){const modal=this.$('g12modal'),dlg=this.$('g12dlg');dlg.innerHTML=html;dlg.style.overflowY=lockScroll?'hidden':'auto';modal.hidden=false}
   closeModal(){this.$('g12modal').hidden=true;this.activity=null}
   showPlayMenu(){this.activity={type:'menu'};this.openModal(`<div class="g12modalhead"><div><b>あそぶ</b><small>なにする？</small></div><button data-modal-close>×</button></div><div class="g12playmenu"><button data-play-mode="tease"><span>🎮</span><b>いつものちょっかい</b><small>とりあえず構う。</small></button><button data-play-mode="words"><span>💬</span><b>ことばをくっつける</b><small>左・まんなか・右を1つずつ。</small></button><button data-play-mode="quiz"><span>❓</span><b>続きあて</b><small>この次なんて返した？</small></button></div>`)}
   randomizeWordGame(game){
     const short=(this.model.corpus?.pools?.short||[]).map(x=>cleanText(x?.text||'')).filter(usefulEnding),seed=cleanText(game?.seed||''),tokens=new Set(this.model.corpus?.tokens||[]);
     const frontPool=uniq([...(FRONT_EXTRA[this.model.target]||[]),...(game?.front||[]).filter(v=>cleanText(v)!==seed&&!tokens.has(cleanText(v)))]),endPool=uniq([...(game?.end||[]),...short].filter(v=>cleanText(v)!==seed));
-    let front=sample(frontPool,10),middle=sample(game?.middle||[],7),end=sample(endPool,10),slot='';
-    if(seed){slot=seedSlot(seed);if(slot==='front')front=[seed,...sample(frontPool,9)];else end=[seed,...sample(endPool,9)]}
+    let front=sample(frontPool,16),middle=sample(game?.middle||[],7),end=sample(endPool,10),slot='';
+    if(seed){slot=seedSlot(seed);if(slot==='front')front=[seed,...sample(frontPool,15)];else end=[seed,...sample(endPool,9)]}
     return{...game,front,middle,end,seed,seedSlot:slot}
   }
   showWordGame(game){const randomized=this.randomizeWordGame(game||{}),selections={front:'',middle:'',end:''};if(randomized.seed&&randomized.seedSlot)selections[randomized.seedSlot]=randomized.seed;this.activity={type:'word',game:randomized,selections};this.renderWordGame()}
-  renderWordGame(){const a=this.activity;if(!a||a.type!=='word')return;const section=(slot,label,rows)=>`<div class="g12wordslot"><b>${label}</b><div>${(rows||[]).map(v=>`<button class="${a.selections[slot]===v?'is-selected':''}" data-word-choice data-slot="${slot}" data-v="${enc(v)}">${esc(v)}</button>`).join('')}</div></div>`,preview=this.life.wordPhrase(a.selections);this.openModal(`<div class="g12modalhead"><div><b>ことばをくっつける</b><small>左・つなぎ・右</small></div><button data-modal-close>×</button></div><div class="g12wordgame">${section('front','左',a.game.front)}${section('middle','つなぎ',a.game.middle)}${section('end','右',a.game.end)}<div class="g12wordpreview">${preview?esc(preview):'3つ選ぶとここにできる。'}</div><button class="g12primary" data-word-finish ${a.selections.front&&a.selections.middle&&a.selections.end?'':'disabled'}>これでいく</button></div>`)}
+  renderWordGame(){
+    const a=this.activity;if(!a||a.type!=='word')return;
+    const section=(slot,label,rows)=>`<div class="g12wordslot"><b>${label}</b><div>${(rows||[]).map(v=>`<button class="${a.selections[slot]===v?'is-selected':''}" data-word-choice data-slot="${slot}" data-v="${enc(v)}">${esc(v)}</button>`).join('')}</div></div>`;
+    const preview=this.life.wordPhrase(a.selections);
+    this.openModal(`<div style="display:flex;flex-direction:column;max-height:calc(86vh - 32px);min-height:0"><div class="g12modalhead" style="flex:0 0 auto"><div><b>ことばをくっつける</b><small>左・つなぎ・右を選んで、この子に言ってみる。</small></div><button data-modal-close>×</button></div><div style="min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:2px"><div class="g12wordgame">${section('front','左',a.game.front)}${section('middle','つなぎ',a.game.middle)}${section('end','右',a.game.end)}</div></div><div style="flex:0 0 auto;padding-top:10px;background:#fff"><div class="g12wordpreview">${preview?esc(preview):'3つ選ぶとここにできる。'}</div><button class="g12primary" data-word-finish ${a.selections.front&&a.selections.middle&&a.selections.end?'':'disabled'} style="margin-top:8px">この子に言ってみる</button></div></div>`,{lockScroll:true})
+  }
   chooseWord(slot,value){if(!this.activity||this.activity.type!=='word')return;this.activity.selections[slot]=dec(value);this.renderWordGame()}
   wordSelection(){return this.activity?.type==='word'?{...this.activity.selections}:null}
   showQuiz(q){if(!q){this.openModal(`<div class="g12modalhead"><b>続きあて</b><button data-modal-close>×</button></div><p class="g12empty">問題が見つからなかった。</p>`);return}this.activity={type:'quiz',question:q};const mine=q.prompt_who==='み';this.openModal(`<div class="g12modalhead"><div><b>続きあて</b><small>この次なんて返した？</small></div><button data-modal-close>×</button></div><div class="g12quizprompt ${mine?'mine':'theirs'}"><span>${esc(q.prompt_who||'')}</span><p>${esc(q.prompt).replaceAll('\n','<br>')}</p></div><div class="g12quizchoices">${q.options.map((v,i)=>`<button data-quiz-choice="${i}">${esc(v).replaceAll('\n','<br>')}</button>`).join('')}</div>`)}
