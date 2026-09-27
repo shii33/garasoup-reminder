@@ -1,4 +1,4 @@
-import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-13';
+import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-14';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const enc=s=>encodeURIComponent(String(s??''));
@@ -48,25 +48,36 @@ export class GrowView{
   renderFinds(){const rows=this.life.finds(),all=rows.length,count=this.$('g12findCount');count.textContent=all?`${all}こ`:'';const box=this.$('g12finds');if(!rows.length){box.innerHTML='<p class="g12empty">まだなんもない。</p>';return}box.innerHTML=rows.map(x=>`<button class="g12find" data-find="${esc(x.id)}"><span class="g12findicon">${esc(x.icon||'•')}</span><span><b>${esc(x.title)}</b><small>${esc(x.subtitle||'')}</small></span><i>›</i></button>`).join('')}
   openModal(html,{lockScroll=false}={}){const modal=this.$('g12modal'),dlg=this.$('g12dlg');dlg.innerHTML=html;dlg.style.overflowY=lockScroll?'hidden':'auto';modal.hidden=false}
   closeModal(){this.$('g12modal').hidden=true;this.activity=null}
-  showPlayMenu(){this.activity={type:'menu'};this.openModal(`<div class="g12modalhead"><div><b>あそぶ</b><small>なにする？</small></div><button data-modal-close>×</button></div><div class="g12playmenu"><button data-play-mode="tease"><span>🎮</span><b>いつものちょっかい</b><small>とりあえず構う。</small></button><button data-play-mode="words"><span>💬</span><b>ことばをくっつける</b><small>左・まんなか・右を1つずつ。</small></button><button data-play-mode="quiz"><span>❓</span><b>続きあて</b><small>この次なんて返した？</small></button></div>`)}
+  showPlayMenu(){this.activity={type:'menu'};this.openModal(`<div class="g12modalhead"><div><b>あそぶ</b><small>なにする？</small></div><button data-modal-close>×</button></div><div class="g12playmenu"><button data-play-mode="tease"><span>🎮</span><b>いつものちょっかい</b><small>とりあえず構う。</small></button><button data-play-mode="words"><span>💬</span><b>ことばをくっつける</b><small>好きな3つを、押した順でくっつける。</small></button><button data-play-mode="quiz"><span>❓</span><b>続きあて</b><small>この次なんて返した？</small></button></div>`)}
   randomizeWordGame(game){
     const allShort=(this.model.corpus?.pools?.short||[]).map(x=>cleanText(x?.text||''));
     const shortEnds=allShort.filter(usefulEnding),leftPhrases=allShort.filter(usefulLeft),seed=cleanText(game?.seed||'');
-    const frontPool=uniq([...(FRONT_EXTRA[this.model.target]||[]),...leftPhrases,...(game?.front||[]).filter(v=>cleanText(v)!==seed)]);
-    const endPool=uniq([...(game?.end||[]),...shortEnds].filter(v=>cleanText(v)!==seed));
-    let front=sample(frontPool,16),middle=sample(game?.middle||[],7),end=sample(endPool,10);
-    if(seed){front=[seed,...sample(frontPool.filter(v=>cleanText(v)!==seed),15)];end=[seed,...sample(endPool.filter(v=>cleanText(v)!==seed),9)]}
-    return{...game,front,middle,end,seed};
+    const pool=uniq([...(FRONT_EXTRA[this.model.target]||[]),...leftPhrases,...(game?.front||[]),...(game?.middle||[]),...(game?.end||[]),...shortEnds]);
+    let choices=sample(pool.filter(v=>cleanText(v)!==seed),30);
+    if(seed)choices=shuffled([seed,...choices.slice(0,29)]);
+    return{...game,choices,seed};
   }
-  showWordGame(game){const randomized=this.randomizeWordGame(game||{}),selections={front:'',middle:'',end:''};this.activity={type:'word',game:randomized,selections};this.renderWordGame()}
+  showWordGame(game){const randomized=this.randomizeWordGame(game||{});this.activity={type:'word',game:randomized,selections:[]};this.renderWordGame()}
   renderWordGame(){
     const a=this.activity;if(!a||a.type!=='word')return;
-    const section=(slot,label,rows)=>`<div class="g12wordslot"><b>${label}</b><div>${(rows||[]).map(v=>`<button class="${a.selections[slot]===v?'is-selected':''}" data-word-choice data-slot="${slot}" data-v="${enc(v)}">${esc(v)}</button>`).join('')}</div></div>`;
-    const preview=this.life.wordPhrase(a.selections);
-    this.openModal(`<div style="display:flex;flex-direction:column;max-height:calc(86vh - 32px);min-height:0"><div class="g12modalhead" style="flex:0 0 auto"><div><b>ことばをくっつける</b><small>左・つなぎ・右を選んで、この子に言ってみる。</small></div><button data-modal-close>×</button></div><div style="min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:2px"><div class="g12wordgame">${section('front','左',a.game.front)}${section('middle','つなぎ',a.game.middle)}${section('end','右',a.game.end)}</div></div><div style="flex:0 0 auto;padding-top:10px;background:#fff"><div class="g12wordpreview">${preview?esc(preview):'3つ選ぶとここにできる。'}</div><button class="g12primary" data-word-finish ${a.selections.front&&a.selections.middle&&a.selections.end?'':'disabled'} style="margin-top:8px">この子に言ってみる</button></div></div>`,{lockScroll:true})
+    const selected=a.selections||[],preview=selected.join('');
+    const choices=(a.game.choices||[]).map(v=>{const index=selected.indexOf(v);return`<button class="${index>=0?'is-selected':''}" data-word-choice data-slot="pool" data-v="${enc(v)}" ${index>=0||selected.length>=3?'disabled':''} style="width:auto;max-width:100%;min-height:40px;padding:8px 11px;border:1px solid ${index>=0?'#111':'#aaa'};border-radius:9px;background:${index>=0?'#f1f1f1':'#fff'};font-size:12px;font-weight:800;line-height:1.35">${index>=0?`${index+1}. `:''}${esc(v)}</button>`}).join('');
+    const steps=selected.length?selected.map((v,i)=>`<span style="display:inline-flex;align-items:center;gap:3px;padding:5px 7px;border:1px solid #111;border-radius:999px;background:#fff;font-size:10px;font-weight:900">${i+1} ${esc(v)}</span>`).join(''):'<span style="color:#888;font-size:10px">候補を3つ、使いたい順に押す。</span>';
+    this.openModal(`<div style="display:flex;flex-direction:column;max-height:calc(86vh - 32px);min-height:0"><div class="g12modalhead" style="flex:0 0 auto"><div><b>ことばをくっつける</b><small>好きな3つを、押した順でくっつける。</small></div><button data-modal-close>×</button></div><div style="min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:2px"><div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:center;gap:8px;padding:2px 0 10px">${choices}</div></div><div style="flex:0 0 auto;padding-top:10px;background:#fff;border-top:1px solid #eee"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><div style="display:flex;flex-wrap:wrap;gap:5px;min-width:0">${steps}</div><button data-word-choice data-slot="pool" data-v="${enc('__undo__')}" ${selected.length?'':'disabled'} style="flex:0 0 auto;padding:6px 9px;border:1px solid #aaa;border-radius:8px;background:#fff;font-size:9px;font-weight:900">↶ ひとつ戻す</button></div><div class="g12wordpreview">${preview?esc(preview):'3つ選ぶとここにできる。'}</div><button class="g12primary" data-word-finish ${selected.length===3?'':'disabled'} style="margin-top:8px">この子に言ってみる</button></div></div>`,{lockScroll:true})
   }
-  chooseWord(slot,value){if(!this.activity||this.activity.type!=='word')return;this.activity.selections[slot]=dec(value);this.renderWordGame()}
-  wordSelection(){return this.activity?.type==='word'?{...this.activity.selections}:null}
+  chooseWord(slot,value){
+    if(!this.activity||this.activity.type!=='word')return;
+    const choice=dec(value),selected=this.activity.selections||[];
+    if(choice==='__undo__')selected.pop();
+    else if(selected.length<3&&!selected.includes(choice))selected.push(choice);
+    this.activity.selections=selected;
+    this.renderWordGame()
+  }
+  wordSelection(){
+    if(this.activity?.type!=='word')return null;
+    const [front,middle,end]=this.activity.selections||[];
+    return{front:front||'',middle:middle||'',end:end||''}
+  }
   showQuiz(q){if(!q){this.openModal(`<div class="g12modalhead"><b>続きあて</b><button data-modal-close>×</button></div><p class="g12empty">問題が見つからなかった。</p>`);return}this.activity={type:'quiz',question:q};const mine=q.prompt_who==='み';this.openModal(`<div class="g12modalhead"><div><b>続きあて</b><small>この次なんて返した？</small></div><button data-modal-close>×</button></div><div class="g12quizprompt ${mine?'mine':'theirs'}"><span>${esc(q.prompt_who||'')}</span><p>${esc(q.prompt).replaceAll('\n','<br>')}</p></div><div class="g12quizchoices">${q.options.map((v,i)=>`<button data-quiz-choice="${i}">${esc(v).replaceAll('\n','<br>')}</button>`).join('')}</div>`)}
   currentQuiz(){return this.activity?.type==='quiz'?this.activity.question:null}
   showQuizResult(r){this.activity={type:'quiz-result'};this.openModal(`<div class="g12modalhead"><div><b>${r.ok?'○ 正解':'× ちがう'}</b><small>${esc(r.date||'')}</small></div><button data-modal-close>×</button></div><div class="g12quizanswer"><small>答え</small><b>${esc(r.answer||'')}</b></div><div class="g12modalactions"><button data-quiz-next>もう1問</button><button data-modal-close>おわる</button></div>`)}
