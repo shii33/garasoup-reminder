@@ -1,4 +1,4 @@
-import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-17';
+import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-18';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const enc=s=>encodeURIComponent(String(s??''));
@@ -8,7 +8,7 @@ const shuffled=a=>{const out=[...(a||[])];for(let i=out.length-1;i>0;i--){const 
 const sample=(a,n)=>shuffled(uniq(a)).slice(0,n);
 const usefulEnding=s=>{const t=cleanText(s);return !!t&&t.length<=18&&!/^(?:w+|ｗ+|笑+|草+)$/i.test(t)&&!/^[-ー〜~!?！？。、…・]+$/.test(t)};
 const usefulLeft=s=>{const t=cleanText(s);return !!t&&t.length>=2&&t.length<=16&&!/^(?:w+|ｗ+|笑+|草+|うい(?:ー)?|おけ(?:ー|け)?|ほう|ふむ|そそ|あーね|はい|うん|ん)$/i.test(t)&&!/^[-ー〜~!?！？。、…・]+$/.test(t)};
-const FRONT_EXTRA={
+const WORD_EXTRA={
   み:['みちゃこ','もっち','今日','われわれ','この子','ガラスープ','仕事終わり','寝る前','風呂上がり','帰り道','休みの日','朝いち','夜中','さっきの話','この感じ','今日のもっち','われわれ二人','眠いとき','お腹すいたとき','なんか今日','たぶん今日','急に','なんとなく','写真見てたら','LINE見てたら','ゲーム中','もう今日は','いまさらだけど','そういえば'],
   も:['もっち','みちゃこ','今日','われわれ','この子','ガラスープ','仕事終わり','寝る前','風呂上がり','帰り道','休みの日','朝いち','夜中','さっきの話','この感じ','今日のみちゃこ','われわれ二人','眠いとき','お腹すいたとき','なんか今日','たぶん今日','急に','なんとなく','写真見てたら','LINE見てたら','ゲーム中','もう今日は','いまさらだけど','そういえば']
 };
@@ -52,7 +52,7 @@ export class GrowView{
   randomizeWordGame(game){
     const allShort=(this.model.corpus?.pools?.short||[]).map(x=>cleanText(x?.text||''));
     const shortEnds=allShort.filter(usefulEnding),leftPhrases=allShort.filter(usefulLeft),seed=cleanText(game?.seed||'');
-    const pool=uniq([...(FRONT_EXTRA[this.model.target]||[]),...leftPhrases,...(game?.front||[]),...(game?.middle||[]),...(game?.end||[]),...shortEnds]);
+    const pool=uniq([...(WORD_EXTRA[this.model.target]||[]),...leftPhrases,...(game?.words||[]),...shortEnds]);
     let choices=sample(pool.filter(v=>cleanText(v)!==seed),30);
     if(seed)choices=[seed,...choices.slice(0,29)];
     return{...game,choices,seed};
@@ -61,23 +61,13 @@ export class GrowView{
   renderWordGame(){
     const a=this.activity;if(!a||a.type!=='word')return;
     const selected=a.selections||[],preview=selected.join(''),seed=cleanText(a.game.seed||'');
-    const choices=(a.game.choices||[]).map(v=>{const index=selected.indexOf(v),isSeed=!!seed&&cleanText(v)===seed;return`<button class="${index>=0?'is-selected':''}" data-word-choice data-slot="pool" data-v="${enc(v)}" ${index>=0||selected.length>=3?'disabled':''} style="width:auto;max-width:100%;min-height:40px;padding:8px 11px;border:1px solid ${index>=0?'#111':isSeed?'#c9b86a':'#aaa'};border-radius:9px;background:${index>=0?'#f1f1f1':isSeed?'#fff9df':'#fff'};font-size:12px;font-weight:800;line-height:1.35">${index>=0?`${index+1}. `:''}${esc(v)}</button>`}).join('');
-    const steps=selected.length?selected.map((v,i)=>`<span style="display:inline-flex;align-items:center;gap:3px;padding:5px 7px;border:1px solid #111;border-radius:999px;background:#fff;font-size:10px;font-weight:900">${i+1} ${esc(v)}</span>`).join(''):'<span style="color:#888;font-size:10px">候補を3つ、使いたい順に押す。</span>';
-    this.openModal(`<div style="display:flex;flex-direction:column;max-height:calc(86vh - 32px);min-height:0"><div class="g12modalhead" style="flex:0 0 auto"><div><b>ことばをくっつける</b><small>好きな3つを、押した順でくっつける。</small></div><button data-modal-close>×</button></div><div style="min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:2px"><div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:center;gap:8px;padding:2px 0 10px">${choices}</div></div><div style="flex:0 0 auto;padding-top:10px;background:#fff;border-top:1px solid #eee"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><div style="display:flex;flex-wrap:wrap;gap:5px;min-width:0">${steps}</div><button data-word-choice data-slot="pool" data-v="${enc('__undo__')}" ${selected.length?'':'disabled'} style="flex:0 0 auto;padding:6px 9px;border:1px solid #aaa;border-radius:8px;background:#fff;font-size:9px;font-weight:900">↶ ひとつ戻す</button></div><div class="g12wordpreview">${preview?esc(preview):'3つ選ぶとここにできる。'}</div><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.7fr);gap:7px;margin-top:8px"><button class="g12primary" data-word-finish ${selected.length===3?'':'disabled'}>この子に言ってみる</button><button data-word-save ${selected.length===3?'':'disabled'} style="box-sizing:border-box;grid-column:1/-1;width:100%;padding:12px;border:1px solid #111;border-radius:9px;background:#fff;font-size:13px;font-weight:900">とっておく</button></div></div></div>`,{lockScroll:true})
+    const choices=(a.game.choices||[]).map(v=>{const index=selected.indexOf(v),isSeed=!!seed&&cleanText(v)===seed;return`<button class="g12wordchoice${index>=0?' is-selected':''}${isSeed?' is-seed':''}" data-word-choice data-v="${enc(v)}" ${index>=0||selected.length>=3?'disabled':''}>${index>=0?`${index+1}. `:''}${esc(v)}</button>`}).join('');
+    const steps=selected.length?selected.map((v,i)=>`<span class="g12wordstep">${i+1} ${esc(v)}</span>`).join(''):'<span class="g12wordhint">候補を3つ、使いたい順に押す。</span>';
+    this.openModal(`<div class="g12wordlayout"><div class="g12modalhead g12wordhead"><div><b>ことばをくっつける</b><small>好きな3つを、押した順でくっつける。</small></div><button data-modal-close>×</button></div><div class="g12wordscroll"><div class="g12wordchoices">${choices}</div></div><div class="g12wordfooter"><div class="g12wordstepsrow"><div class="g12wordsteps">${steps}</div><button class="g12wordundo" data-word-undo ${selected.length?'':'disabled'}>↶ ひとつ戻す</button></div><div class="g12wordpreview">${preview?esc(preview):'3つ選ぶとここにできる。'}</div><div class="g12wordbuttons"><button class="g12primary" data-word-finish ${selected.length===3?'':'disabled'}>この子に言ってみる</button><button class="g12wordsave" data-word-save ${selected.length===3?'':'disabled'}>とっておく</button></div></div></div>`,{lockScroll:true})
   }
-  chooseWord(slot,value){
-    if(!this.activity||this.activity.type!=='word')return;
-    const choice=dec(value),selected=this.activity.selections||[];
-    if(choice==='__undo__')selected.pop();
-    else if(selected.length<3&&!selected.includes(choice))selected.push(choice);
-    this.activity.selections=selected;
-    this.renderWordGame()
-  }
-  wordSelection(){
-    if(this.activity?.type!=='word')return null;
-    const [front,middle,end]=this.activity.selections||[];
-    return{front:front||'',middle:middle||'',end:end||''}
-  }
+  chooseWord(value){if(!this.activity||this.activity.type!=='word')return;const choice=dec(value),selected=this.activity.selections||[];if(selected.length<3&&!selected.includes(choice))selected.push(choice);this.activity.selections=selected;this.renderWordGame()}
+  undoWord(){if(!this.activity||this.activity.type!=='word')return;this.activity.selections?.pop();this.renderWordGame()}
+  wordSelection(){return this.activity?.type==='word'?[...(this.activity.selections||[])]:null}
   showQuiz(q){if(!q){this.openModal(`<div class="g12modalhead"><b>続きあて</b><button data-modal-close>×</button></div><p class="g12empty">問題が見つからなかった。</p>`);return}this.activity={type:'quiz',question:q};const mine=q.prompt_who==='み';this.openModal(`<div class="g12modalhead"><div><b>続きあて</b><small>この次なんて返した？</small></div><button data-modal-close>×</button></div><div class="g12quizprompt ${mine?'mine':'theirs'}"><span>${esc(q.prompt_who||'')}</span><p>${esc(q.prompt).replaceAll('\n','<br>')}</p></div><div class="g12quizchoices">${q.options.map((v,i)=>`<button data-quiz-choice="${i}">${esc(v).replaceAll('\n','<br>')}</button>`).join('')}</div>`)}
   currentQuiz(){return this.activity?.type==='quiz'?this.activity.question:null}
   showQuizResult(r){this.activity={type:'quiz-result'};this.openModal(`<div class="g12modalhead"><div><b>${r.ok?'○ 正解':'× ちがう'}</b><small>${esc(r.date||'')}</small></div><button data-modal-close>×</button></div><div class="g12quizanswer"><small>答え</small><b>${esc(r.answer||'')}</b></div><div class="g12modalactions"><button data-quiz-next>もう1問</button><button data-modal-close>おわる</button></div>`)}
