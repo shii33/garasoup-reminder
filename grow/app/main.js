@@ -1,9 +1,9 @@
-import './data-service.js?v=20260927-refactor-3';
-import {GrowModel,getViewer} from './core.js?v=20260927-refactor-3';
-import {CreatureLife} from './life.js?v=20260927-refactor-3';
-import {SourceLog} from './source-log.js?v=20260927-refactor-3';
-import {GrowView} from './view.js?v=20260927-refactor-3';
-import {ShareService} from './share.js?v=20260927-refactor-3';
+import './data-service.js?v=20260927-refactor-4';
+import {GrowModel,getViewer} from './core.js?v=20260927-refactor-4';
+import {CreatureLife} from './life.js?v=20260927-refactor-4';
+import {SourceLog} from './source-log.js?v=20260927-refactor-4';
+import {GrowView} from './view.js?v=20260927-refactor-4';
+import {ShareService} from './share.js?v=20260927-refactor-4';
 
 const TIMING={
   idleMin:7000,
