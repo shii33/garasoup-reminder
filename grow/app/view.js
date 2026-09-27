@@ -1,4 +1,4 @@
-import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-6';
+import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-7';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const enc=s=>encodeURIComponent(String(s??''));
@@ -7,6 +7,7 @@ const uniq=a=>[...new Set((a||[]).map(x=>cleanText(x)).filter(Boolean))];
 const shuffled=a=>{const out=[...(a||[])];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}return out};
 const sample=(a,n)=>shuffled(uniq(a)).slice(0,n);
 const usefulEnding=s=>{const t=cleanText(s);return !!t&&t.length<=18&&!/^(?:w+|ｗ+|笑+|草+)$/i.test(t)&&!/^[-ー〜~!?！？。、…・]+$/.test(t)};
+const seedSlot=s=>{const t=cleanText(s);if(!t)return'end';if(t.length>10||/[！？!?。…]/.test(t))return'end';if(/^(?:w+|ｗ+|笑+|草+|うい(?:ー)?|おけ(?:ー|け)?|ほう|ふむ|そそ|あーね|なるほど?|はい|うん|ん|だん|やばっ?|かわい(?:い)?|好き|すき|フロダン)/i.test(t))return'end';return'front'};
 const FRONT_EXTRA={
   み:['みちゃこ','今日','われわれ','この子','ガラスープ','これ','それ','さっき','明日','仕事','ごはん','ねこ'],
   も:['もっち','今日','われわれ','この子','ガラスープ','これ','それ','さっき','明日','仕事','ごはん','ねこ']
@@ -50,12 +51,12 @@ export class GrowView{
   showPlayMenu(){this.activity={type:'menu'};this.openModal(`<div class="g12modalhead"><div><b>あそぶ</b><small>なにする？</small></div><button data-modal-close>×</button></div><div class="g12playmenu"><button data-play-mode="tease"><span>🎮</span><b>いつものちょっかい</b><small>とりあえず構う。</small></button><button data-play-mode="words"><span>💬</span><b>ことばをくっつける</b><small>左・まんなか・右を1つずつ。</small></button><button data-play-mode="quiz"><span>❓</span><b>続きあて</b><small>この次なんて返した？</small></button></div>`)}
   randomizeWordGame(game){
     const short=(this.model.corpus?.pools?.short||[]).map(x=>cleanText(x?.text||'')).filter(usefulEnding),seed=cleanText(game?.seed||''),tokens=new Set(this.model.corpus?.tokens||[]);
-    const frontPool=uniq([...(FRONT_EXTRA[this.model.target]||[]),...(game?.front||[]).filter(v=>cleanText(v)!==seed&&!tokens.has(cleanText(v)))]),endPool=[...(game?.end||[]),...short];
-    let front=sample(frontPool,7),middle=sample(game?.middle||[],7),end=sample(endPool,7);
-    if(seed&&usefulEnding(seed)&&!end.includes(seed))end=[...end.slice(0,6),seed];
-    return{...game,front,middle,end}
+    const frontPool=uniq([...(FRONT_EXTRA[this.model.target]||[]),...(game?.front||[]).filter(v=>cleanText(v)!==seed&&!tokens.has(cleanText(v)))]),endPool=uniq([...(game?.end||[]),...short].filter(v=>cleanText(v)!==seed));
+    let front=sample(frontPool,7),middle=sample(game?.middle||[],7),end=sample(endPool,7),slot='';
+    if(seed){slot=seedSlot(seed);if(slot==='front')front=[seed,...sample(frontPool,6)];else end=[seed,...sample(endPool,6)]}
+    return{...game,front,middle,end,seed,seedSlot:slot}
   }
-  showWordGame(game){const randomized=this.randomizeWordGame(game||{});this.activity={type:'word',game:randomized,selections:{front:'',middle:'',end:''}};this.renderWordGame()}
+  showWordGame(game){const randomized=this.randomizeWordGame(game||{}),selections={front:'',middle:'',end:''};if(randomized.seed&&randomized.seedSlot)selections[randomized.seedSlot]=randomized.seed;this.activity={type:'word',game:randomized,selections};this.renderWordGame()}
   renderWordGame(){const a=this.activity;if(!a||a.type!=='word')return;const section=(slot,label,rows)=>`<div class="g12wordslot"><b>${label}</b><div>${(rows||[]).map(v=>`<button class="${a.selections[slot]===v?'is-selected':''}" data-word-choice data-slot="${slot}" data-v="${enc(v)}">${esc(v)}</button>`).join('')}</div></div>`,preview=this.life.wordPhrase(a.selections);this.openModal(`<div class="g12modalhead"><div><b>ことばをくっつける</b><small>左・つなぎ・右</small></div><button data-modal-close>×</button></div><div class="g12wordgame">${section('front','左',a.game.front)}${section('middle','つなぎ',a.game.middle)}${section('end','右',a.game.end)}<div class="g12wordpreview">${preview?esc(preview):'3つ選ぶとここにできる。'}</div><button class="g12primary" data-word-finish ${a.selections.front&&a.selections.middle&&a.selections.end?'':'disabled'}>これでいく</button></div>`)}
   chooseWord(slot,value){if(!this.activity||this.activity.type!=='word')return;this.activity.selections[slot]=dec(value);this.renderWordGame()}
   wordSelection(){return this.activity?.type==='word'?{...this.activity.selections}:null}
