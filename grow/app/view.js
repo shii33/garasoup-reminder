@@ -1,4 +1,4 @@
-import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-7';
+import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-8';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const enc=s=>encodeURIComponent(String(s??''));
@@ -63,7 +63,16 @@ export class GrowView{
   showQuiz(q){if(!q){this.openModal(`<div class="g12modalhead"><b>続きあて</b><button data-modal-close>×</button></div><p class="g12empty">問題が見つからなかった。</p>`);return}this.activity={type:'quiz',question:q};const mine=q.prompt_who==='み';this.openModal(`<div class="g12modalhead"><div><b>続きあて</b><small>この次なんて返した？</small></div><button data-modal-close>×</button></div><div class="g12quizprompt ${mine?'mine':'theirs'}"><span>${esc(q.prompt_who||'')}</span><p>${esc(q.prompt).replaceAll('\n','<br>')}</p></div><div class="g12quizchoices">${q.options.map((v,i)=>`<button data-quiz-choice="${i}">${esc(v).replaceAll('\n','<br>')}</button>`).join('')}</div>`)}
   currentQuiz(){return this.activity?.type==='quiz'?this.activity.question:null}
   showQuizResult(r){this.activity={type:'quiz-result'};this.openModal(`<div class="g12modalhead"><div><b>${r.ok?'○ 正解':'× ちがう'}</b><small>${esc(r.date||'')}</small></div><button data-modal-close>×</button></div><div class="g12quizanswer"><small>答え</small><b>${esc(r.answer||'')}</b></div><div class="g12modalactions"><button data-quiz-next>もう1問</button><button data-modal-close>おわる</button></div>`)}
-  showFindItem(item,{gift=false}={}){if(!item)return;this.activity={type:'find',item};const text=item.payload?.text||item.payload?.word||'',action=item.type==='quiz'?`<button data-item-quiz="${esc(item.id)}">続きあてにつかう</button>`:['charm','crafted'].includes(item.type)?`<button data-item-say="${esc(item.id)}">この子に言ってみる</button>`:`<button data-item-word="${esc(item.id)}">ことば遊びにつかう</button>`;this.openModal(`<div class="g12modalhead"><div><b>${gift?'おかえり。':`${esc(item.icon||'•')} ${esc(item.title||'')}`}</b><small>${gift?'なんか持ってきた。':esc(item.subtitle||'')}</small></div><button data-modal-close>×</button></div>${gift?`<div class="g12gift"><span>${esc(item.icon||'🎁')}</span><b>${esc(item.title||'おみやげ')}</b><small>${esc(item.subtitle||'')}</small></div>`:text?`<div class="g12memoryquote">${esc(text)}</div>`:''}<div class="g12modalactions">${action}<button data-item-drop="${esc(item.id)}">手放す</button><button data-modal-close>あとで</button></div>`)}
+  showFindItem(item,{gift=false}={}){
+    if(!item)return;
+    this.activity={type:'find',item};
+    const rawText=cleanText(item.payload?.text||item.payload?.word||'');
+    const titleText=cleanText(String(item.title||'').replace(/^[「『“"]|[」』”"]$/g,''));
+    const showQuote=rawText&&rawText!==titleText;
+    const action=item.type==='quiz'?`<button class="g12itemprimary" data-item-quiz="${esc(item.id)}">続きあてにつかう</button>`:['charm','crafted'].includes(item.type)?`<button class="g12itemprimary" data-item-say="${esc(item.id)}">この子に言ってみる</button>`:`<button class="g12itemprimary" data-item-word="${esc(item.id)}">ことば遊びにつかう</button>`;
+    const kicker=gift?'<span class="g12itemkicker">おかえり。なんか持ってきた。</span>':'';
+    this.openModal(`<div class="g12itemdetail">${kicker}<div class="g12itemhead"><span class="g12itemheroicon">${esc(item.icon||'•')}</span><div><b>${esc(item.title||'ひろいもの')}</b><small>${esc(item.subtitle||'')}</small></div><button data-modal-close aria-label="閉じる">×</button></div>${showQuote?`<div class="g12itemquote">${esc(rawText)}</div>`:''}<div class="g12itemactions">${action}<button class="g12itemdrop" data-item-drop="${esc(item.id)}">手放す</button></div></div>`)
+  }
   showGift(item){this.showFindItem(item,{gift:true})}
   showStageUp(change){const label=change?.to==='baby'?'あかちゃん':change?.to==='child'?'こども':change?.to==='adult'?'おとな':String(change?.to||'');this.activity={type:'stage'};this.openModal(`<div class="g12stageup"><b>${esc(label)}</b><span>になった。</span><button type="button" data-modal-close>おけ</button></div>`)}
 }
