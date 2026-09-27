@@ -1,9 +1,9 @@
-import './data-service.js?v=20260927-refactor-17';
-import {GrowModel,getViewer} from './core.js?v=20260927-refactor-17';
-import {CreatureLife} from './life.js?v=20260927-refactor-17';
-import {SourceLog} from './source-log.js?v=20260927-refactor-17';
-import {GrowView} from './view.js?v=20260927-refactor-17';
-import {ShareService} from './share.js?v=20260927-refactor-17';
+import './data-service.js?v=20260927-refactor-18';
+import {GrowModel,getViewer} from './core.js?v=20260927-refactor-18';
+import {CreatureLife} from './life.js?v=20260927-refactor-18';
+import {SourceLog} from './source-log.js?v=20260927-refactor-18';
+import {GrowView} from './view.js?v=20260927-refactor-18';
+import {ShareService} from './share.js?v=20260927-refactor-18';
 
 const TIMING={
   idleMin:7000,
@@ -27,7 +27,6 @@ const rand=(min,max)=>min+Math.random()*(max-min);
 const emptyCorpus=()=>({pools:{},sceneMap:new Map(),tokens:[],count:0});
 const timeout=(ms,value=null)=>new Promise(resolve=>setTimeout(()=>resolve(value),ms));
 const queueShare=(delay=TIMING.shareRender)=>share.schedule(delay);
-const trimPhrase=(text,n=30)=>{const s=String(text||'').replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n-1)+'…':s};
 
 function clearIdle(){clearTimeout(idleTimer)}
 function scheduleIdle(min=TIMING.idleMin,max=TIMING.idleMax){clearIdle();idleTimer=setTimeout(runIdle,rand(min,max))}
@@ -49,27 +48,20 @@ async function renderLifeResult(result,onDone){if(!result)return;await view.rend
 async function handleCare(button){if(button.disabled)return;noteInteraction();view.releasePose();const result=button.dataset.a?await model.act(button.dataset.a):await model.eggAct(button.dataset.e);await renderActionResult(result)}
 async function handleUsualPlay(){noteInteraction();view.closeModal();await renderActionResult(await model.act('play'))}
 async function openQuiz(){view.showQuiz(await life.quizQuestion())}
+
 async function handleWordFinish(){
-  const parts=view.wordSelection();if(!parts?.front||!parts?.middle||!parts?.end)return;
+  const words=view.wordSelection();if(words?.length!==3)return;
   const sourceItemId=wordSourceItemId;wordSourceItemId='';noteInteraction();view.closeModal();
-  const result=await life.completeWordGame(parts);
-  if(result?.item)life.removeItem(result.item.id);
-  if(sourceItemId)life.removeItem(sourceItemId);
-  await model.save();
-  await renderLifeResult(result,()=>view.showIdleFx('💬'));
+  await renderLifeResult(await life.sayCraftedPhrase(words,{sourceItemId}),()=>view.showIdleFx('💬'));
 }
+
 async function handleWordSave(){
-  const parts=view.wordSelection();if(!parts?.front||!parts?.middle||!parts?.end)return;
-  const phrase=life.wordPhrase(parts);if(!phrase)return;
+  const words=view.wordSelection();if(words?.length!==3)return;
   const sourceItemId=wordSourceItemId;wordSourceItemId='';noteInteraction();view.closeModal();
-  if(sourceItemId)life.removeItem(sourceItemId);
-  life.addItem({id:life.itemId('crafted'),type:'crafted',icon:'💬',title:trimPhrase(phrase),subtitle:'あとで言ってみる',origin:'play',createdAt:Date.now(),payload:{text:phrase,word:phrase}});
-  await model.save();
-  await view.render({preservePet:true});
-  view.showIdleFx('💬');
-  settleAfterReaction();
-  queueShare(TIMING.shareAction);
+  const result=await life.saveCraftedPhrase(words,{sourceItemId});if(!result)return;
+  await view.render({preservePet:true});view.showIdleFx('💬');settleAfterReaction();queueShare(TIMING.shareAction);
 }
+
 async function handleQuizAnswer(index){const question=view.currentQuiz();if(!question)return;noteInteraction();await renderLifeResult(await life.answerQuiz(question,index),result=>view.showQuizResult(result))}
 async function recall(){noteInteraction();await renderLifeResult(await life.recallOuting(),result=>view.showGift(result.item))}
 async function useWordItem(id){const item=life.getItem(id);if(!item)return;wordSourceItemId=item.id;const seed=item.payload?.text||item.payload?.word||item.title;await view.render({preservePet:true});view.showWordGame(life.wordGame(seed));queueShare()}
@@ -88,7 +80,8 @@ async function handleClick(event){
   const itemQuiz=target.closest('[data-item-quiz]');if(itemQuiz){await useQuizItem(itemQuiz.dataset.itemQuiz);return}
   const itemSay=target.closest('[data-item-say]');if(itemSay){await sayItem(itemSay.dataset.itemSay);return}
   const itemDrop=target.closest('[data-item-drop]');if(itemDrop){await dropItem(itemDrop.dataset.itemDrop);return}
-  const wordChoice=target.closest('[data-word-choice]');if(wordChoice){view.chooseWord(wordChoice.dataset.slot,wordChoice.dataset.v);return}
+  const wordChoice=target.closest('[data-word-choice]');if(wordChoice){view.chooseWord(wordChoice.dataset.v);return}
+  if(target.closest('[data-word-undo]')){view.undoWord();return}
   if(target.closest('[data-word-finish]')){await handleWordFinish();return}
   if(target.closest('[data-word-save]')){await handleWordSave();return}
   const quizChoice=target.closest('[data-quiz-choice]');if(quizChoice){await handleQuizAnswer(quizChoice.dataset.quizChoice);return}
