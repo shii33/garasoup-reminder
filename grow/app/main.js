@@ -1,9 +1,9 @@
-import './data-service.js?v=20260927-refactor-2';
-import {GrowModel,getViewer} from './core.js?v=20260927-refactor-2';
-import {CreatureLife} from './life.js?v=20260927-refactor-2';
-import {SourceLog} from './source-log.js?v=20260927-refactor-2';
-import {GrowView} from './view.js?v=20260927-refactor-2';
-import {ShareService} from './share.js?v=20260927-refactor-2';
+import './data-service.js?v=20260927-refactor-3';
+import {GrowModel,getViewer} from './core.js?v=20260927-refactor-3';
+import {CreatureLife} from './life.js?v=20260927-refactor-3';
+import {SourceLog} from './source-log.js?v=20260927-refactor-3';
+import {GrowView} from './view.js?v=20260927-refactor-3';
+import {ShareService} from './share.js?v=20260927-refactor-3';
 
 const TIMING={
   idleMin:7000,
@@ -139,7 +139,8 @@ async function handleWordFinish(){
   const parts=view.wordSelection();
   if(!parts?.front||!parts?.middle||!parts?.end)return;
   noteInteraction();
-  await renderLifeResult(await life.completeWordGame(parts),result=>view.showWordResult(result));
+  view.closeModal();
+  await renderLifeResult(await life.completeWordGame(parts),()=>view.showIdleFx('💬'));
 }
 
 async function handleQuizAnswer(index){
