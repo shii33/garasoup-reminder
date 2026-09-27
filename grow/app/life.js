@@ -1,4 +1,4 @@
-import {cleanText,now,today} from './core.js?v=20260927-life-6';
+import {cleanText,now,today} from './core.js?v=20260927-refactor-6';
 
 const LIMITS={
   inventory:18,
@@ -534,14 +534,14 @@ export class CreatureLife{
     return{item,question:await this.quizQuestion()};
   }
 
-  async useCharmItem(id){
+  async sayItem(id){
     const item=this.removeItem(id);
     if(!item)return null;
 
     const care=await this.model.act('pat');
     this.speakKey('affection','pat');
     const pose=this.stagePose({adult:'adult_shy.png',child:'child_cheer.png',baby:'baby_front.png'});
-    this.setEvent('💘 メロがってる','charm',pose);
+    this.setEvent('💘 メロがってる','say',pose);
     await this.model.save();
 
     return{item,pose,anim:'squish',fx:'♡',speech:this.model.state.lastSpeech,stageChanged:care?.stageChanged||null};
