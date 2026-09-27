@@ -196,7 +196,7 @@ export class CreatureLife{
       type:'charm',
       icon:'💘',
       title:`「${trim(entry.text,24)}」`,
-      subtitle:'この子につかえる',
+      subtitle:'あとで言ってみる',
       origin:'saved',
       createdAt:now(),
       payload:{text:entry.text,date:entry.date||'',sceneId:entry.sceneId||'',prev:entry.prev||''},
@@ -470,7 +470,7 @@ export class CreatureLife{
     if(!phrase)return null;
 
     const care=await this.model.act('play');
-    const item={id:this.itemId('crafted'),type:'crafted',icon:'💬',title:trim(phrase,30),subtitle:'この子につかえる',origin:'play',createdAt:now(),payload:{text:phrase,word:phrase}};
+    const item={id:this.itemId('crafted'),type:'crafted',icon:'💬',title:trim(phrase,30),subtitle:'あとで言ってみる',origin:'play',createdAt:now(),payload:{text:phrase,word:phrase}};
     this.addItem(item);
     this.speakKey(Math.random()<.25?'tease':'play','play');
 
