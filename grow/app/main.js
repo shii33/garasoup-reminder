@@ -1,9 +1,9 @@
-import './data-service.js?v=20260927-refactor-9';
-import {GrowModel,getViewer} from './core.js?v=20260927-refactor-9';
-import {CreatureLife} from './life.js?v=20260927-refactor-9';
-import {SourceLog} from './source-log.js?v=20260927-refactor-9';
-import {GrowView} from './view.js?v=20260927-refactor-9';
-import {ShareService} from './share.js?v=20260927-refactor-9';
+import './data-service.js?v=20260927-refactor-10';
+import {GrowModel,getViewer} from './core.js?v=20260927-refactor-10';
+import {CreatureLife} from './life.js?v=20260927-refactor-10';
+import {SourceLog} from './source-log.js?v=20260927-refactor-10';
+import {GrowView} from './view.js?v=20260927-refactor-10';
+import {ShareService} from './share.js?v=20260927-refactor-10';
 
 const TIMING={
   idleMin:7000,
@@ -19,6 +19,7 @@ let model=null;
 let life=null;
 let view=null;
 let idleTimer=0;
+let wordSourceItemId='';
 
 const sourceLog=new SourceLog();
 const share=new ShareService();
@@ -84,6 +85,7 @@ async function loadModelFast(viewer){
 }
 
 async function switchModel(viewer){
+  wordSourceItemId='';
   model=await loadModelFast(viewer);
   life=new CreatureLife(model);
   await life.initialize();
@@ -134,9 +136,13 @@ async function openQuiz(){view.showQuiz(await life.quizQuestion())}
 async function handleWordFinish(){
   const parts=view.wordSelection();
   if(!parts?.front||!parts?.middle||!parts?.end)return;
+  const sourceItemId=wordSourceItemId;
+  wordSourceItemId='';
   noteInteraction();
   view.closeModal();
-  await renderLifeResult(await life.completeWordGame(parts),()=>view.showIdleFx('💬'));
+  const result=await life.completeWordGame(parts);
+  if(result&&sourceItemId)await life.consumeItem(sourceItemId);
+  await renderLifeResult(result,()=>view.showIdleFx('💬'));
 }
 
 async function handleQuizAnswer(index){
@@ -152,10 +158,12 @@ async function recall(){
 }
 
 async function useWordItem(id){
-  const result=await life.useWordItem(id);
-  if(!result)return;
+  const item=life.getItem(id);
+  if(!item)return;
+  wordSourceItemId=item.id;
+  const seed=item.payload?.text||item.payload?.word||item.title;
   await view.render({preservePet:true});
-  view.showWordGame(result.game);
+  view.showWordGame(life.wordGame(seed));
   queueShare();
 }
 
@@ -200,7 +208,7 @@ async function farewell(){
 async function handleClick(event){
   const target=event.target;
 
-  if(target.closest('[data-modal-close]')){view.closeModal();return}
+  if(target.closest('[data-modal-close]')){wordSourceItemId='';view.closeModal();return}
 
   const recallButton=target.closest('[data-recall]');
   if(recallButton){event.preventDefault();await recall();return}
@@ -240,7 +248,10 @@ async function handleClick(event){
   if(playMode){
     const mode=playMode.dataset.playMode;
     if(mode==='tease')await handleUsualPlay();
-    else if(mode==='words')view.showWordGame(life.wordGame());
+    else if(mode==='words'){
+      wordSourceItemId='';
+      view.showWordGame(life.wordGame());
+    }
     else if(mode==='quiz')await openQuiz();
     return;
   }
