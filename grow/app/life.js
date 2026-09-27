@@ -1,12 +1,12 @@
-import {cleanText,now,today} from './core.js?v=20260927-refactor-6';
+import {cleanText,now,today} from './core.js?v=20260927-refactor-9';
 
 const LIMITS={
   inventory:18,
   duplicateWindow:12,
   quizRecent:80,
   statusFreshMs:180000,
-  outingIdleMs:240000,
-  outingCooldownMs:10800000,
+  outingIdleMs:120000,
+  outingCooldownMs:3600000,
 };
 
 const uniq=a=>[...new Set((a||[]).map(x=>String(x||'').trim()).filter(Boolean))];
@@ -65,7 +65,7 @@ export class CreatureLife{
     life.inventory=Array.isArray(life.inventory)?life.inventory:[];
     life.lastFindDate=life.lastFindDate||'';
     life.lastOutingAt=Number(life.lastOutingAt||0);
-    life.lastInteractionAt=Number(life.lastInteractionAt||0);
+    life.lastInteractionAt=Number(life.lastInteractionAt||now());
     life.quizRecent=Array.isArray(life.quizRecent)?life.quizRecent:[];
     life.lastEvent=life.lastEvent||null;
 
@@ -336,7 +336,7 @@ export class CreatureLife{
     this.setEvent(event.status||'… なんかしてる',event.kind||'idle',event.pose||'');
 
     let found=null;
-    if(Math.random()<.007+this.maturity()*.001){
+    if(Math.random()<.02+this.maturity()*.002){
       found=this.makeItem('idle');
       this.addItem(found);
     }
@@ -348,11 +348,11 @@ export class CreatureLife{
   shouldStartOuting(){
     const stage=this.model.stageKey();
     const life=this.life();
-    if(!['child','adult'].includes(stage)||life.outing.active||this.model.isAsleep())return false;
+    if(!['baby','child','adult'].includes(stage)||life.outing.active||this.model.isAsleep())return false;
     if(now()-life.lastInteractionAt<LIMITS.outingIdleMs)return false;
     if(now()-life.lastOutingAt<LIMITS.outingCooldownMs)return false;
 
-    let chance=.004*(1+this.maturity()*.08);
+    let chance=(stage==='baby'?.012:.015)*(1+this.maturity()*.08);
     if(life.mood==='curious')chance*=1.8;
     if(this.model.state.personality==='aloof')chance*=1.35;
     if(this.model.state.personality==='playful')chance*=1.2;
@@ -361,7 +361,8 @@ export class CreatureLife{
 
   async startOuting(){
     const life=this.life();
-    const minutes=20+Math.random()*60;
+    const stage=this.model.stageKey();
+    const minutes=stage==='baby'?5+Math.random()*10:12+Math.random()*28;
     life.outing={active:true,startedAt:now(),returnAt:now()+minutes*60000};
     life.lastEvent={at:now(),status:'🚪 おでかけ中',kind:'outing',pose:''};
     await this.model.save();
@@ -389,7 +390,7 @@ export class CreatureLife{
     this.addItem(item);
     this.speakKey('return','return');
 
-    const pose=this.stagePose({adult:'adult_cheer.png',child:'child_cheer.png'});
+    const pose=this.stagePose({adult:'adult_cheer.png',child:'child_cheer.png',baby:'baby_front.png'});
     this.setEvent('🎁 なんか持って帰ってきた','return',pose);
     if(save)await this.model.save();
 
@@ -402,8 +403,7 @@ export class CreatureLife{
     if(life.lastFindDate===date||this.model.stageKey()==='egg')return false;
 
     life.lastFindDate=date;
-    const first=!life.inventory.length;
-    if(first||hash(`${date}|find|${this.model.target}`)%100<72)this.addItem(this.makeItem('daily'));
+    this.addItem(this.makeItem('daily'));
     return true;
   }
 
