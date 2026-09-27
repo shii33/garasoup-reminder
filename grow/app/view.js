@@ -1,4 +1,4 @@
-import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-12';
+import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-13';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const enc=s=>encodeURIComponent(String(s??''));
@@ -7,10 +7,10 @@ const uniq=a=>[...new Set((a||[]).map(x=>cleanText(x)).filter(Boolean))];
 const shuffled=a=>{const out=[...(a||[])];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}return out};
 const sample=(a,n)=>shuffled(uniq(a)).slice(0,n);
 const usefulEnding=s=>{const t=cleanText(s);return !!t&&t.length<=18&&!/^(?:w+|ｗ+|笑+|草+)$/i.test(t)&&!/^[-ー〜~!?！？。、…・]+$/.test(t)};
-const seedSlot=s=>{const t=cleanText(s);if(!t)return'end';if(t.length>10||/[！？!?。…]/.test(t))return'end';if(/^(?:w+|ｗ+|笑+|草+|うい(?:ー)?|おけ(?:ー|け)?|ほう|ふむ|そそ|あーね|なるほど?|はい|うん|ん|だん|やばっ?|かわい(?:い)?|好き|すき|フロダン)/i.test(t))return'end';return'front'};
+const usefulLeft=s=>{const t=cleanText(s);return !!t&&t.length>=2&&t.length<=16&&!/^(?:w+|ｗ+|笑+|草+|うい(?:ー)?|おけ(?:ー|け)?|ほう|ふむ|そそ|あーね|はい|うん|ん)$/i.test(t)&&!/^[-ー〜~!?！？。、…・]+$/.test(t)};
 const FRONT_EXTRA={
-  み:['みちゃこ','もっち','今日','われわれ','この子','ガラスープ','これ','それ','さっき','明日','仕事','ごはん','ねこ','スマホ','おふろ','朝','夜','休み','会社','電車','家','予定','写真','ゲーム','LINE','布団','天気','眠気'],
-  も:['もっち','みちゃこ','今日','われわれ','この子','ガラスープ','これ','それ','さっき','明日','仕事','ごはん','ねこ','スマホ','おふろ','朝','夜','休み','会社','電車','家','予定','写真','ゲーム','LINE','布団','天気','眠気']
+  み:['みちゃこ','もっち','今日','われわれ','この子','ガラスープ','仕事終わり','寝る前','風呂上がり','帰り道','休みの日','朝いち','夜中','さっきの話','この感じ','今日のもっち','われわれ二人','眠いとき','お腹すいたとき','なんか今日','たぶん今日','急に','なんとなく','写真見てたら','LINE見てたら','ゲーム中','もう今日は','いまさらだけど','そういえば'],
+  も:['もっち','みちゃこ','今日','われわれ','この子','ガラスープ','仕事終わり','寝る前','風呂上がり','帰り道','休みの日','朝いち','夜中','さっきの話','この感じ','今日のみちゃこ','われわれ二人','眠いとき','お腹すいたとき','なんか今日','たぶん今日','急に','なんとなく','写真見てたら','LINE見てたら','ゲーム中','もう今日は','いまさらだけど','そういえば']
 };
 
 export class GrowView{
@@ -50,13 +50,15 @@ export class GrowView{
   closeModal(){this.$('g12modal').hidden=true;this.activity=null}
   showPlayMenu(){this.activity={type:'menu'};this.openModal(`<div class="g12modalhead"><div><b>あそぶ</b><small>なにする？</small></div><button data-modal-close>×</button></div><div class="g12playmenu"><button data-play-mode="tease"><span>🎮</span><b>いつものちょっかい</b><small>とりあえず構う。</small></button><button data-play-mode="words"><span>💬</span><b>ことばをくっつける</b><small>左・まんなか・右を1つずつ。</small></button><button data-play-mode="quiz"><span>❓</span><b>続きあて</b><small>この次なんて返した？</small></button></div>`)}
   randomizeWordGame(game){
-    const short=(this.model.corpus?.pools?.short||[]).map(x=>cleanText(x?.text||'')).filter(usefulEnding),seed=cleanText(game?.seed||''),tokens=new Set(this.model.corpus?.tokens||[]);
-    const frontPool=uniq([...(FRONT_EXTRA[this.model.target]||[]),...(game?.front||[]).filter(v=>cleanText(v)!==seed&&!tokens.has(cleanText(v)))]),endPool=uniq([...(game?.end||[]),...short].filter(v=>cleanText(v)!==seed));
-    let front=sample(frontPool,16),middle=sample(game?.middle||[],7),end=sample(endPool,10),slot='';
-    if(seed){slot=seedSlot(seed);if(slot==='front')front=[seed,...sample(frontPool,15)];else end=[seed,...sample(endPool,9)]}
-    return{...game,front,middle,end,seed,seedSlot:slot}
+    const allShort=(this.model.corpus?.pools?.short||[]).map(x=>cleanText(x?.text||''));
+    const shortEnds=allShort.filter(usefulEnding),leftPhrases=allShort.filter(usefulLeft),seed=cleanText(game?.seed||'');
+    const frontPool=uniq([...(FRONT_EXTRA[this.model.target]||[]),...leftPhrases,...(game?.front||[]).filter(v=>cleanText(v)!==seed)]);
+    const endPool=uniq([...(game?.end||[]),...shortEnds].filter(v=>cleanText(v)!==seed));
+    let front=sample(frontPool,16),middle=sample(game?.middle||[],7),end=sample(endPool,10);
+    if(seed){front=[seed,...sample(frontPool.filter(v=>cleanText(v)!==seed),15)];end=[seed,...sample(endPool.filter(v=>cleanText(v)!==seed),9)]}
+    return{...game,front,middle,end,seed};
   }
-  showWordGame(game){const randomized=this.randomizeWordGame(game||{}),selections={front:'',middle:'',end:''};if(randomized.seed&&randomized.seedSlot)selections[randomized.seedSlot]=randomized.seed;this.activity={type:'word',game:randomized,selections};this.renderWordGame()}
+  showWordGame(game){const randomized=this.randomizeWordGame(game||{}),selections={front:'',middle:'',end:''};this.activity={type:'word',game:randomized,selections};this.renderWordGame()}
   renderWordGame(){
     const a=this.activity;if(!a||a.type!=='word')return;
     const section=(slot,label,rows)=>`<div class="g12wordslot"><b>${label}</b><div>${(rows||[]).map(v=>`<button class="${a.selections[slot]===v?'is-selected':''}" data-word-choice data-slot="${slot}" data-v="${enc(v)}">${esc(v)}</button>`).join('')}</div></div>`;
