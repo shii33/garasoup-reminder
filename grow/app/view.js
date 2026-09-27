@@ -1,4 +1,4 @@
-import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-8';
+import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-11';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const enc=s=>encodeURIComponent(String(s??''));
@@ -52,8 +52,8 @@ export class GrowView{
   randomizeWordGame(game){
     const short=(this.model.corpus?.pools?.short||[]).map(x=>cleanText(x?.text||'')).filter(usefulEnding),seed=cleanText(game?.seed||''),tokens=new Set(this.model.corpus?.tokens||[]);
     const frontPool=uniq([...(FRONT_EXTRA[this.model.target]||[]),...(game?.front||[]).filter(v=>cleanText(v)!==seed&&!tokens.has(cleanText(v)))]),endPool=uniq([...(game?.end||[]),...short].filter(v=>cleanText(v)!==seed));
-    let front=sample(frontPool,7),middle=sample(game?.middle||[],7),end=sample(endPool,7),slot='';
-    if(seed){slot=seedSlot(seed);if(slot==='front')front=[seed,...sample(frontPool,6)];else end=[seed,...sample(endPool,6)]}
+    let front=sample(frontPool,10),middle=sample(game?.middle||[],7),end=sample(endPool,10),slot='';
+    if(seed){slot=seedSlot(seed);if(slot==='front')front=[seed,...sample(frontPool,9)];else end=[seed,...sample(endPool,9)]}
     return{...game,front,middle,end,seed,seedSlot:slot}
   }
   showWordGame(game){const randomized=this.randomizeWordGame(game||{}),selections={front:'',middle:'',end:''};if(randomized.seed&&randomized.seedSlot)selections[randomized.seedSlot]=randomized.seed;this.activity={type:'word',game:randomized,selections};this.renderWordGame()}
