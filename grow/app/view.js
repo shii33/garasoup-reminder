@@ -1,4 +1,4 @@
-import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-16';
+import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-17';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const enc=s=>encodeURIComponent(String(s??''));
@@ -54,14 +54,14 @@ export class GrowView{
     const shortEnds=allShort.filter(usefulEnding),leftPhrases=allShort.filter(usefulLeft),seed=cleanText(game?.seed||'');
     const pool=uniq([...(FRONT_EXTRA[this.model.target]||[]),...leftPhrases,...(game?.front||[]),...(game?.middle||[]),...(game?.end||[]),...shortEnds]);
     let choices=sample(pool.filter(v=>cleanText(v)!==seed),30);
-    if(seed)choices=shuffled([seed,...choices.slice(0,29)]);
+    if(seed)choices=[seed,...choices.slice(0,29)];
     return{...game,choices,seed};
   }
   showWordGame(game){const randomized=this.randomizeWordGame(game||{});this.activity={type:'word',game:randomized,selections:[]};this.renderWordGame()}
   renderWordGame(){
     const a=this.activity;if(!a||a.type!=='word')return;
-    const selected=a.selections||[],preview=selected.join('');
-    const choices=(a.game.choices||[]).map(v=>{const index=selected.indexOf(v);return`<button class="${index>=0?'is-selected':''}" data-word-choice data-slot="pool" data-v="${enc(v)}" ${index>=0||selected.length>=3?'disabled':''} style="width:auto;max-width:100%;min-height:40px;padding:8px 11px;border:1px solid ${index>=0?'#111':'#aaa'};border-radius:9px;background:${index>=0?'#f1f1f1':'#fff'};font-size:12px;font-weight:800;line-height:1.35">${index>=0?`${index+1}. `:''}${esc(v)}</button>`}).join('');
+    const selected=a.selections||[],preview=selected.join(''),seed=cleanText(a.game.seed||'');
+    const choices=(a.game.choices||[]).map(v=>{const index=selected.indexOf(v),isSeed=!!seed&&cleanText(v)===seed;return`<button class="${index>=0?'is-selected':''}" data-word-choice data-slot="pool" data-v="${enc(v)}" ${index>=0||selected.length>=3?'disabled':''} style="width:auto;max-width:100%;min-height:40px;padding:8px 11px;border:1px solid ${index>=0?'#111':isSeed?'#c9b86a':'#aaa'};border-radius:9px;background:${index>=0?'#f1f1f1':isSeed?'#fff9df':'#fff'};font-size:12px;font-weight:800;line-height:1.35">${index>=0?`${index+1}. `:''}${esc(v)}</button>`}).join('');
     const steps=selected.length?selected.map((v,i)=>`<span style="display:inline-flex;align-items:center;gap:3px;padding:5px 7px;border:1px solid #111;border-radius:999px;background:#fff;font-size:10px;font-weight:900">${i+1} ${esc(v)}</span>`).join(''):'<span style="color:#888;font-size:10px">候補を3つ、使いたい順に押す。</span>';
     this.openModal(`<div style="display:flex;flex-direction:column;max-height:calc(86vh - 32px);min-height:0"><div class="g12modalhead" style="flex:0 0 auto"><div><b>ことばをくっつける</b><small>好きな3つを、押した順でくっつける。</small></div><button data-modal-close>×</button></div><div style="min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:2px"><div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:center;gap:8px;padding:2px 0 10px">${choices}</div></div><div style="flex:0 0 auto;padding-top:10px;background:#fff;border-top:1px solid #eee"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><div style="display:flex;flex-wrap:wrap;gap:5px;min-width:0">${steps}</div><button data-word-choice data-slot="pool" data-v="${enc('__undo__')}" ${selected.length?'':'disabled'} style="flex:0 0 auto;padding:6px 9px;border:1px solid #aaa;border-radius:8px;background:#fff;font-size:9px;font-weight:900">↶ ひとつ戻す</button></div><div class="g12wordpreview">${preview?esc(preview):'3つ選ぶとここにできる。'}</div><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.7fr);gap:7px;margin-top:8px"><button class="g12primary" data-word-finish ${selected.length===3?'':'disabled'}>この子に言ってみる</button><button data-word-save ${selected.length===3?'':'disabled'} style="box-sizing:border-box;grid-column:1/-1;width:100%;padding:12px;border:1px solid #111;border-radius:9px;background:#fff;font-size:13px;font-weight:900">とっておく</button></div></div></div>`,{lockScroll:true})
   }
