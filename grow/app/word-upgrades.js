@@ -7,6 +7,7 @@ const CONNECTORS=['は','が','を','に','で','と','も','の','へ','から'
 const CONNECTOR_SET=new Set(CONNECTORS);
 const uniq=a=>[...new Set((a||[]).map(x=>String(x||'').trim()).filter(Boolean))];
 const shuffled=a=>{const out=[...(a||[])];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}return out};
+const usableWord=v=>String(v||'').trim().replace(/[wｗ]+$/i,'').trim();
 
 // ひろいもの：18→30。自分で「とっておく」したものを、自然に拾ったものより先に消さない。
 CreatureLife.prototype.addItem=function(item){
@@ -23,12 +24,14 @@ CreatureLife.prototype.addItem=function(item){
 };
 
 // 接続に使える短いことばを少し増やし、毎回5〜6個は候補に混ざるようにする。
+// ログ由来候補の末尾の w / ｗ は、ことば遊びでつなぎやすいよう候補表示時だけ落とす。
 const originalRandomize=GrowView.prototype.randomizeWordGame;
 GrowView.prototype.randomizeWordGame=function(game){
   const result=originalRandomize.call(this,game);
   const seed=String(result.seed||'').trim();
+  const normalizedChoices=(result.choices||[]).map(v=>String(v||'').trim()===seed?seed:usableWord(v)).filter(Boolean);
   const connectorPool=shuffled(CONNECTORS.filter(x=>x!==seed)).slice(0,6);
-  const rest=shuffled((result.choices||[]).filter(x=>x!==seed&&!CONNECTOR_SET.has(String(x).trim())));
+  const rest=shuffled(normalizedChoices.filter(x=>x!==seed&&!CONNECTOR_SET.has(String(x).trim())));
   const choices=seed?uniq([seed,...connectorPool,...rest]).slice(0,30):uniq([...connectorPool,...rest]).slice(0,30);
   return{...result,choices};
 };
