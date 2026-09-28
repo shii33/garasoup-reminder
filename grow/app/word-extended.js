@@ -1,6 +1,9 @@
 import {GrowView} from './view.js?v=20260927-refactor-18';
 
 const PUNCT=['、','。','！','？'];
+const EMOJI_FONT='"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji"';
+const TEXT_FONT='-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif';
+const SHARE_FONT=`${TEXT_FONT},${EMOJI_FONT}`;
 const viewer=()=>localStorage.getItem('warera_chat_perspective')==='も'?'も':'み';
 const enc=s=>encodeURIComponent(String(s??''));
 const dec=s=>decodeURIComponent(String(s??''));
@@ -15,6 +18,11 @@ let toastTimer=0;
 
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function itemText(item){return String(item?.payload?.text||item?.payload?.word||item?.title||'').replace(/^[「『“"]|[」』”"]$/g,'').trim()}
+function graphemes(text){
+  const value=String(text||'');
+  if(globalThis.Intl?.Segmenter)return [...new Intl.Segmenter('ja',{granularity:'grapheme'}).segment(value)].map(x=>x.segment);
+  return Array.from(value);
+}
 
 function installStyle(){
   if(document.getElementById('g12-word-extended-style'))return;
@@ -75,8 +83,8 @@ function buildChoices(view,seed=''){
 
 function showExtended(view,{seed='',sourceItemId=''}={}){
   currentView=view;
-  const first=String(seed||'').trim();
-  view.activity={type:'word-plus',selections:first?[first]:[],choices:buildChoices(view,first),sourceItemId};
+  const sourceText=String(seed||'').trim();
+  view.activity={type:'word-plus',selections:[],choices:buildChoices(view,sourceText),sourceItemId,sourceItemText:sourceText};
   renderExtended(view);
 }
 
@@ -88,8 +96,12 @@ function renderExtended(view){
   view.openModal(`<div class="g12x-layout"><div class="g12modalhead"><div><b>ことばをくっつける＋</b><small>1〜6こまで。句読点も使える。</small></div><button data-modal-close>×</button></div><div class="g12x-choices">${choices}</div><div class="g12x-footer"><div class="g12x-preview">${phrase?esc(phrase):'<span style="color:#999;font-size:12px">使いたい順に押す。</span>'}</div><div class="g12x-meta"><span>${selected.length}/6</span><button type="button" class="g12x-undo" data-x-undo ${selected.length?'':'disabled'}>ひとつ戻す</button></div><div class="g12x-actions"><button type="button" class="primary" data-x-say ${selected.length?'':'disabled'}>この子に言う</button><button type="button" data-x-save ${selected.length?'':'disabled'}>とっておく</button><button type="button" data-x-send ${selected.length?'':'disabled'}>相手に送る</button><button type="button" data-x-share ${selected.length?'':'disabled'}>画像でシェア</button></div></div></div>`);
 }
 
-async function say(view){const words=[...(view.activity?.selections||[])],sourceItemId=view.activity?.sourceItemId||'';if(!words.length)return;view.closeModal();const result=await view.life.sayCraftedPhrase(words,{sourceItemId});await view.render({preservePet:true});if(result?.stageChanged)view.showStageUp(result.stageChanged);else if(result)view.applyLifeEvent(result)}
-async function save(view){const words=[...(view.activity?.selections||[])],sourceItemId=view.activity?.sourceItemId||'';if(!words.length)return;await view.life.saveCraftedPhrase(words,{sourceItemId});view.closeModal();await view.render({preservePet:true});view.showIdleFx('💬')}
+function selectedSourceId(view){
+  const a=view.activity;if(!a||!a.sourceItemId||!a.sourceItemText)return'';
+  return (a.selections||[]).includes(a.sourceItemText)?a.sourceItemId:'';
+}
+async function say(view){const words=[...(view.activity?.selections||[])],sourceItemId=selectedSourceId(view);if(!words.length)return;view.closeModal();const result=await view.life.sayCraftedPhrase(words,{sourceItemId});await view.render({preservePet:true});if(result?.stageChanged)view.showStageUp(result.stageChanged);else if(result)view.applyLifeEvent(result)}
+async function save(view){const words=[...(view.activity?.selections||[])],sourceItemId=selectedSourceId(view);if(!words.length)return;await view.life.saveCraftedPhrase(words,{sourceItemId});view.closeModal();await view.render({preservePet:true});view.showIdleFx('💬')}
 
 function giftUrl(words){const url=new URL(location.href);url.search='';url.hash='';url.searchParams.set('gift',enc64(words));url.searchParams.set('from',viewer());return url.toString()}
 async function send(words){if(!words.length)return;const url=giftUrl(words);if(mobileShare()&&navigator.share){try{await navigator.share({url});return}catch(err){if(err?.name==='AbortError')return}}
@@ -97,9 +109,34 @@ async function send(words){if(!words.length)return;const url=giftUrl(words);if(m
 }
 
 function roundRect(ctx,x,y,w,h,r){const rr=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);ctx.arcTo(x+w,y+h,x,y+h,rr);ctx.arcTo(x,y+h,x,y,rr);ctx.arcTo(x,y,x+w,y,rr);ctx.closePath()}
-function wrap(ctx,text,max){const lines=[];let line='';for(const ch of String(text||'')){const next=line+ch;if(line&&ctx.measureText(next).width>max){lines.push(line);line=ch}else line=next}if(line||!lines.length)lines.push(line);return lines}
+function wrap(ctx,text,max){
+  const lines=[];let line='';
+  for(const unit of graphemes(text)){
+    const next=line+unit;
+    if(line&&ctx.measureText(next).width>max){lines.push(line);line=unit}else line=next;
+  }
+  if(line||!lines.length)lines.push(line);return lines;
+}
+function drawCenteredLine(ctx,line,cx,y,maxWidth){
+  const units=graphemes(line),widths=units.map(unit=>ctx.measureText(unit).width),total=widths.reduce((a,b)=>a+b,0);
+  if(!total)return;
+  const scale=Math.min(1,maxWidth/total),oldFont=ctx.font;
+  if(scale<1){const m=oldFont.match(/(\d+(?:\.\d+)?)px/);if(m)ctx.font=oldFont.replace(m[0],`${Math.max(28,Number(m[1])*scale)}px`)}
+  const finalWidths=units.map(unit=>ctx.measureText(unit).width),finalTotal=finalWidths.reduce((a,b)=>a+b,0);
+  let x=cx-finalTotal/2;ctx.textAlign='left';
+  units.forEach((unit,i)=>{ctx.fillText(unit,x,y);x+=finalWidths[i]});
+  ctx.font=oldFont;
+}
 async function shareImage(words){
-  if(!words.length)return;const phrase=words.join('');const c=document.createElement('canvas');c.width=1080;c.height=1350;const ctx=c.getContext('2d');ctx.fillStyle='#f2f2f2';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#fff';roundRect(ctx,70,70,940,1210,34);ctx.fill();ctx.strokeStyle='#111';ctx.lineWidth=4;roundRect(ctx,70,70,940,1210,34);ctx.stroke();ctx.fillStyle='#111';ctx.font='900 52px -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif';ctx.textAlign='left';ctx.fillText('ことばをくっつける＋',120,165);ctx.fillStyle='#777';ctx.font='700 24px -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif';ctx.fillText(`${words.length}こ、くっつけた。`,120,210);ctx.fillStyle='#fafafa';roundRect(ctx,120,290,840,720,26);ctx.fill();ctx.strokeStyle='#999';ctx.setLineDash([12,12]);roundRect(ctx,120,290,840,720,26);ctx.stroke();ctx.setLineDash([]);let size=74;let lines=[];do{ctx.font=`900 ${size}px -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif`;lines=wrap(ctx,phrase,700);if(lines.length<=6)break;size-=4}while(size>34);ctx.fillStyle='#111';ctx.textAlign='center';const lh=size*1.45,start=650-(lines.length-1)*lh/2;lines.slice(0,6).forEach((line,i)=>ctx.fillText(line,540,start+i*lh));ctx.fillStyle='#777';ctx.font='800 22px -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif';ctx.fillText('我らのあそび場',540,1195);
+  if(!words.length)return;
+  const phrase=words.join(''),c=document.createElement('canvas');c.width=1080;c.height=1350;const ctx=c.getContext('2d');
+  ctx.fillStyle='#f2f2f2';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#fff';roundRect(ctx,70,70,940,1210,34);ctx.fill();ctx.strokeStyle='#111';ctx.lineWidth=4;roundRect(ctx,70,70,940,1210,34);ctx.stroke();
+  ctx.fillStyle='#111';ctx.font=`900 52px ${SHARE_FONT}`;ctx.textAlign='left';ctx.fillText('ことばをくっつける＋',120,165);ctx.fillStyle='#777';ctx.font=`700 24px ${SHARE_FONT}`;ctx.fillText(`${words.length}こ、くっつけた。`,120,210);
+  ctx.fillStyle='#fafafa';roundRect(ctx,120,290,840,720,26);ctx.fill();ctx.strokeStyle='#999';ctx.setLineDash([12,12]);roundRect(ctx,120,290,840,720,26);ctx.stroke();ctx.setLineDash([]);
+  const maxWidth=680;let size=74,lines=[];
+  do{ctx.font=`900 ${size}px ${SHARE_FONT}`;lines=wrap(ctx,phrase,maxWidth);if(lines.length<=6&&lines.every(line=>ctx.measureText(line).width<=maxWidth))break;size-=4}while(size>34);
+  ctx.font=`900 ${size}px ${SHARE_FONT}`;ctx.fillStyle='#111';const lh=size*1.45,start=650-(Math.min(lines.length,6)-1)*lh/2;lines.slice(0,6).forEach((line,i)=>drawCenteredLine(ctx,line,540,start+i*lh,maxWidth));
+  ctx.fillStyle='#777';ctx.font=`800 22px ${SHARE_FONT}`;ctx.textAlign='center';ctx.fillText('我らのあそび場',540,1195);
   const blob=await new Promise(r=>c.toBlob(r,'image/png'));if(!blob)return;const file=new File([blob],`warera-kotoba-plus-${Date.now()}.png`,{type:'image/png'});if(!navigator.share||navigator.canShare&&!navigator.canShare({files:[file]})){alert('このブラウザでは画像共有できない。');return}try{await navigator.share({files:[file]})}catch(err){if(err?.name!=='AbortError')alert('共有画面を開けなかった。')}
 }
 
@@ -107,7 +144,7 @@ installStyle();ensureToast();
 document.addEventListener('click',async event=>{
   const mode=event.target.closest?.('[data-play-mode="words-plus"]');if(mode){event.preventDefault();event.stopImmediatePropagation();if(currentView)showExtended(currentView);return}
   const itemPlus=event.target.closest?.('[data-x-item-plus]');if(itemPlus){event.preventDefault();event.stopImmediatePropagation();if(!currentView)return;const item=currentView.life.getItem(itemPlus.dataset.xItemPlus||'');if(item)showExtended(currentView,{seed:itemText(item),sourceItemId:item.id});return}
-  const choice=event.target.closest?.('[data-x-choice]');if(choice){event.preventDefault();event.stopImmediatePropagation();if(!currentView?.activity||currentView.activity.type!=='word-plus')return;const v=dec(choice.dataset.v||'');const selections=currentView.activity.selections;const index=selections.indexOf(v);if(index>=0)selections.splice(index,1);else if(selections.length<6)selections.push(v);renderExtended(currentView);return}
+  const choice=event.target.closest?.('[data-x-choice]');if(choice){event.preventDefault();event.stopImmediatePropagation();if(!currentView?.activity||currentView.activity.type!=='word-plus')return;const v=dec(choice.dataset.v||''),selections=currentView.activity.selections,index=selections.indexOf(v);if(index>=0)selections.splice(index,1);else if(selections.length<6)selections.push(v);renderExtended(currentView);return}
   const undo=event.target.closest?.('[data-x-undo]');if(undo){event.preventDefault();event.stopImmediatePropagation();currentView?.activity?.selections?.pop();if(currentView)renderExtended(currentView);return}
   const sayBtn=event.target.closest?.('[data-x-say]');if(sayBtn){event.preventDefault();event.stopImmediatePropagation();if(currentView)await say(currentView);return}
   const saveBtn=event.target.closest?.('[data-x-save]');if(saveBtn){event.preventDefault();event.stopImmediatePropagation();if(currentView)await save(currentView);return}
