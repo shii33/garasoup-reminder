@@ -26,7 +26,7 @@ function ensureButton(){
   const box=document.querySelector('#g12 .g12wordbuttons');
   if(!box)return;
   const primary=box.querySelector('.g12primary');
-  if(primary)primary.textContent='この子に言う';
+  if(primary&&primary.textContent!=='この子に言う')primary.textContent='この子に言う';
   let button=box.querySelector('[data-word-share]');
   if(!button){
     button=document.createElement('button');
