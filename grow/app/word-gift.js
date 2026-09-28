@@ -99,8 +99,8 @@ async function openNativeShare(data){
 
 async function nativeSend(words,button){
   if(!words?.length)return;
-  const from=viewer(),phrase=words.join(''),url=giftUrl(words),old=button?.textContent||'相手に送る';
-  const shareData={title:'われわれ育成所',text:`「${phrase}」\n${person(from)}からことばが届いた。`,url};
+  const url=giftUrl(words),old=button?.textContent||'相手に送る';
+  const shareData={url};
   if(button?.isConnected){button.disabled=true;button.textContent='送る準備中…'}
   try{
     if(mobileShare()&&navigator.share){await openNativeShare(shareData);return}
