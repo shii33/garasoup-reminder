@@ -16,10 +16,13 @@ const dec64=value=>{
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const viewer=()=>localStorage.getItem('warera_chat_perspective')==='も'?'も':'み';
 const person=v=>v==='も'?'もっち':v==='み'?'みちゃこ':'相手';
+const mobileShare=()=>/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||window.matchMedia?.('(pointer:coarse)').matches;
 
 let activeView=null;
 let incoming=null;
 let incomingShown=false;
+let desktopShare=null;
+let toastTimer=0;
 
 function readIncoming(){
   const url=new URL(location.href),gift=url.searchParams.get('gift');
@@ -52,7 +55,23 @@ function installStyle(){
     #g12 .g12received-actions button{padding:11px;border:1px solid #111;border-radius:9px;background:#fff;font-size:11px;font-weight:900}
     #g12 .g12received-actions .primary{grid-column:1/-1;background:#111;color:#fff}
     #g12 .g12items-send{padding:9px;border:1px dashed #111;border-radius:8px;background:#fafafa;font-size:9px;font-weight:900;line-height:1.4}
+    #g12gifttoast{position:fixed;left:50%;bottom:24px;z-index:500;display:flex;align-items:center;gap:10px;transform:translateX(-50%);padding:10px 12px;border:1px solid #111;border-radius:10px;background:#fff;box-shadow:3px 3px 0 rgba(0,0,0,.22);font-size:12px;font-weight:900;white-space:nowrap}
+    #g12gifttoast[hidden]{display:none}
+    #g12gifttoast button{padding:7px 9px;border:1px solid #111;border-radius:7px;background:#111;color:#fff;font-size:11px;font-weight:900}
   `;document.head.append(style);
+}
+
+function ensureToast(){
+  if(document.getElementById('g12gifttoast'))return;
+  const toast=document.createElement('div');toast.id='g12gifttoast';toast.hidden=true;
+  toast.innerHTML='<span>リンクをコピーした</span><button type="button" data-gift-native-share>共有を開く</button>';
+  document.body.append(toast);
+}
+
+function showCopiedToast(){
+  ensureToast();const toast=document.getElementById('g12gifttoast');
+  const shareButton=toast.querySelector('[data-gift-native-share]');shareButton.hidden=!navigator.share;
+  toast.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{toast.hidden=true},4500);
 }
 
 function ensureSendButton(){
@@ -73,15 +92,26 @@ function giftUrl(words){
   const url=new URL(location.href);url.search='';url.hash='';url.searchParams.set('gift',enc64(words));url.searchParams.set('from',viewer());return url.toString();
 }
 
+async function openNativeShare(data){
+  if(!navigator.share||!data)return false;
+  try{await navigator.share(data);return true}catch(err){if(err?.name!=='AbortError')console.warn('word gift share failed',err);return false}
+}
+
 async function nativeSend(words,button){
   if(!words?.length)return;
   const from=viewer(),phrase=words.join(''),url=giftUrl(words),old=button?.textContent||'相手に送る';
+  const shareData={title:'われわれ育成所',text:`「${phrase}」\n${person(from)}からことばが届いた。`,url};
   if(button?.isConnected){button.disabled=true;button.textContent='送る準備中…'}
   try{
-    if(navigator.share){await navigator.share({title:'われわれ育成所',text:`「${phrase}」\n${person(from)}からことばが届いた。`,url});return}
-    await navigator.clipboard.writeText(url);alert('リンクをコピーしたよ。相手に送ってね。');
-  }catch(err){if(err?.name!=='AbortError'){console.warn('word gift share failed',err);try{await navigator.clipboard.writeText(url);alert('リンクをコピーしたよ。相手に送ってね。')}catch{alert('共有画面を開けなかった。')}}}
-  finally{if(button?.isConnected){button.textContent=old;button.disabled=selectedWords().length!==3&&button.hasAttribute('data-word-send')}}
+    if(mobileShare()&&navigator.share){await openNativeShare(shareData);return}
+    try{
+      await navigator.clipboard.writeText(url);
+      desktopShare=shareData;showCopiedToast();
+    }catch{
+      if(navigator.share)await openNativeShare(shareData);
+      else alert('リンクをコピーできなかった。');
+    }
+  }finally{if(button?.isConnected){button.textContent=old;button.disabled=selectedWords().length!==3&&button.hasAttribute('data-word-send')}}
 }
 
 function showIncoming(view){
@@ -108,13 +138,14 @@ async function saveIncoming(button){
   activeView.life.addItem(item);await activeView.model.save();incoming=null;activeView.closeModal();await activeView.render({preservePet:true});activeView.showIdleFx('💌');
 }
 
-installStyle();
+installStyle();ensureToast();
 const observer=new MutationObserver(()=>{ensureSendButton();ensureSavedSend()});observer.observe(document.documentElement,{childList:true,subtree:true});
 ensureSendButton();ensureSavedSend();
 
 document.addEventListener('click',event=>{
   const send=event.target.closest?.('[data-word-send]');if(send){event.preventDefault();event.stopPropagation();nativeSend(selectedWords(),send);return}
   const saved=event.target.closest?.('[data-saved-send]');if(saved){event.preventDefault();event.stopPropagation();let phrase='';try{phrase=decodeURIComponent(saved.dataset.phrase||'')}catch{phrase=saved.dataset.phrase||''}nativeSend(phrase?[phrase]:[],saved);return}
+  const native=event.target.closest?.('[data-gift-native-share]');if(native){event.preventDefault();event.stopPropagation();openNativeShare(desktopShare);return}
   const say=event.target.closest?.('[data-gift-say]');if(say){event.preventDefault();event.stopPropagation();sayIncoming();return}
   const save=event.target.closest?.('[data-gift-save]');if(save){event.preventDefault();event.stopPropagation();saveIncoming(save);return}
 },true);
