@@ -13,13 +13,13 @@ const dec64=value=>{
     return Array.isArray(parsed)?parsed.map(x=>String(x||'').trim()).filter(Boolean):[];
   }catch{return[]}
 };
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const viewer=()=>localStorage.getItem('warera_chat_perspective')==='も'?'も':'み';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 const person=v=>v==='も'?'もっち':v==='み'?'みちゃこ':'相手';
 
 let activeView=null;
 let incoming=null;
 let incomingShown=false;
+let pendingSend=null;
 
 function readIncoming(){
   const url=new URL(location.href),gift=url.searchParams.get('gift');
@@ -52,6 +52,15 @@ function installStyle(){
     #g12 .g12received-actions button{padding:11px;border:1px solid #111;border-radius:9px;background:#fff;font-size:11px;font-weight:900}
     #g12 .g12received-actions .primary{grid-column:1/-1;background:#111;color:#fff}
     #g12 .g12items-send{padding:9px;border:1px dashed #111;border-radius:8px;background:#fafafa;font-size:9px;font-weight:900;line-height:1.4}
+    #g12sendpick{position:fixed;inset:0;z-index:400;display:grid;place-items:center;padding:18px;background:rgba(0,0,0,.36)}
+    #g12sendpick[hidden]{display:none}
+    #g12sendpick .pickbox{width:min(320px,calc(100vw - 36px));padding:16px;border:1px solid #111;border-radius:12px;background:#fff;box-shadow:5px 5px 0 rgba(0,0,0,.28)}
+    #g12sendpick .pickhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    #g12sendpick .pickhead b{font-size:16px}
+    #g12sendpick .pickclose{width:32px;height:32px;border:1px solid #111;border-radius:8px;background:#fff;font-size:18px;font-weight:900}
+    #g12sendpick .pickbuttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    #g12sendpick .pickbuttons button{padding:14px 10px;border:1px solid #111;border-radius:9px;background:#fff;font-size:15px;font-weight:900;box-shadow:2px 2px 0 rgba(0,0,0,.16)}
+    #g12sendpick .pickbuttons button:active{transform:translateY(2px);box-shadow:none}
   `;document.head.append(style);
 }
 
@@ -69,17 +78,32 @@ function ensureSavedSend(){
   const drop=box.querySelector('[data-item-drop]');box.insertBefore(button,drop||null);
 }
 
-function giftUrl(words){
-  const url=new URL(location.href);url.search='';url.hash='';url.searchParams.set('gift',enc64(words));url.searchParams.set('from',viewer());return url.toString();
+function ensureSenderPicker(){
+  if(document.getElementById('g12sendpick'))return;
+  const el=document.createElement('div');el.id='g12sendpick';el.hidden=true;
+  el.innerHTML=`<div class="pickbox"><div class="pickhead"><b>だれから送る？</b><button type="button" class="pickclose" data-send-pick-close>×</button></div><div class="pickbuttons"><button type="button" data-send-from="み">み</button><button type="button" data-send-from="も">も</button></div></div>`;
+  document.body.append(el);
 }
 
-async function nativeSend(words,button){
-  if(!words?.length)return;const phrase=words.join(''),url=giftUrl(words),old=button.textContent;button.disabled=true;button.textContent='送る準備中…';
+function openSenderPicker(words,button){
+  if(!words?.length)return;
+  ensureSenderPicker();pendingSend={words:[...words],button};document.getElementById('g12sendpick').hidden=false;
+}
+function closeSenderPicker(){const el=document.getElementById('g12sendpick');if(el)el.hidden=true;pendingSend=null}
+
+function giftUrl(words,from){
+  const url=new URL(location.href);url.search='';url.hash='';url.searchParams.set('gift',enc64(words));url.searchParams.set('from',from);return url.toString();
+}
+
+async function nativeSend(words,button,from){
+  if(!words?.length||!['み','も'].includes(from))return;
+  const phrase=words.join(''),url=giftUrl(words,from),old=button?.textContent||'相手に送る';
+  if(button?.isConnected){button.disabled=true;button.textContent='送る準備中…'}
   try{
-    if(navigator.share){await navigator.share({title:'われわれ育成所',text:`「${phrase}」\nことばが届いた。`,url});return}
+    if(navigator.share){await navigator.share({title:'われわれ育成所',text:`「${phrase}」\n${person(from)}からことばが届いた。`,url});return}
     await navigator.clipboard.writeText(url);alert('リンクをコピーしたよ。相手に送ってね。');
   }catch(err){if(err?.name!=='AbortError'){console.warn('word gift share failed',err);try{await navigator.clipboard.writeText(url);alert('リンクをコピーしたよ。相手に送ってね。')}catch{alert('共有画面を開けなかった。')}}}
-  finally{if(button.isConnected){button.textContent=old;button.disabled=selectedWords().length!==3&&button.hasAttribute('data-word-send')}}
+  finally{if(button?.isConnected){button.textContent=old;button.disabled=selectedWords().length!==3&&button.hasAttribute('data-word-send')}}
 }
 
 function showIncoming(view){
@@ -106,13 +130,15 @@ async function saveIncoming(button){
   activeView.life.addItem(item);await activeView.model.save();incoming=null;activeView.closeModal();await activeView.render({preservePet:true});activeView.showIdleFx('💌');
 }
 
-installStyle();
+installStyle();ensureSenderPicker();
 const observer=new MutationObserver(()=>{ensureSendButton();ensureSavedSend()});observer.observe(document.documentElement,{childList:true,subtree:true});
 ensureSendButton();ensureSavedSend();
 
 document.addEventListener('click',event=>{
-  const send=event.target.closest?.('[data-word-send]');if(send){event.preventDefault();event.stopPropagation();nativeSend(selectedWords(),send);return}
-  const saved=event.target.closest?.('[data-saved-send]');if(saved){event.preventDefault();event.stopPropagation();let phrase='';try{phrase=decodeURIComponent(saved.dataset.phrase||'')}catch{phrase=saved.dataset.phrase||''}nativeSend(phrase?[phrase]:[],saved);return}
+  const send=event.target.closest?.('[data-word-send]');if(send){event.preventDefault();event.stopPropagation();openSenderPicker(selectedWords(),send);return}
+  const saved=event.target.closest?.('[data-saved-send]');if(saved){event.preventDefault();event.stopPropagation();let phrase='';try{phrase=decodeURIComponent(saved.dataset.phrase||'')}catch{phrase=saved.dataset.phrase||''}openSenderPicker(phrase?[phrase]:[],saved);return}
+  const from=event.target.closest?.('[data-send-from]');if(from){event.preventDefault();event.stopPropagation();const job=pendingSend;if(!job)return;document.getElementById('g12sendpick').hidden=true;pendingSend=null;nativeSend(job.words,job.button,from.dataset.sendFrom);return}
+  if(event.target.closest?.('[data-send-pick-close]')||event.target.id==='g12sendpick'){event.preventDefault();event.stopPropagation();closeSenderPicker();return}
   const say=event.target.closest?.('[data-gift-say]');if(say){event.preventDefault();event.stopPropagation();sayIncoming();return}
   const save=event.target.closest?.('[data-gift-save]');if(save){event.preventDefault();event.stopPropagation();saveIncoming(save);return}
 },true);
