@@ -14,6 +14,7 @@ let desktopShareUrl='';
 let toastTimer=0;
 
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function itemText(item){return String(item?.payload?.text||item?.payload?.word||item?.title||'').replace(/^[「『“"]|[」』”"]$/g,'').trim()}
 
 function installStyle(){
   if(document.getElementById('g12-word-extended-style'))return;
@@ -32,6 +33,7 @@ function installStyle(){
     #g12 .g12x-actions button{padding:11px 8px;border:1px solid #111;border-radius:9px;background:#fff;font-size:12px;font-weight:900}
     #g12 .g12x-actions .primary{background:#111;color:#fff}
     #g12 .g12x-undo{padding:7px 9px;border:1px solid #aaa;border-radius:7px;background:#fff;font-size:11px;font-weight:800}
+    #g12 .g12items-plus{padding:9px;border:1px solid #111;border-radius:8px;background:#fff;font-size:9px;font-weight:900;line-height:1.4}
     #g12x-toast{position:fixed;left:50%;bottom:24px;z-index:550;display:flex;align-items:center;gap:10px;transform:translateX(-50%);padding:10px 12px;border:1px solid #111;border-radius:10px;background:#fff;box-shadow:3px 3px 0 rgba(0,0,0,.22);font-size:12px;font-weight:900;white-space:nowrap}
     #g12x-toast[hidden]{display:none}
     #g12x-toast button{padding:7px 9px;border:1px solid #111;border-radius:7px;background:#111;color:#fff;font-size:11px;font-weight:900}
@@ -52,17 +54,29 @@ GrowView.prototype.showPlayMenu=function(){
   }
 };
 
-function buildChoices(view){
-  const base=view.life.wordGame('');
+const originalShowFindItem=GrowView.prototype.showFindItem;
+GrowView.prototype.showFindItem=function(item,opts={}){
+  currentView=this;originalShowFindItem.call(this,item,opts);
+  if(!item||item.type==='quiz')return;
+  const actions=this.$('g12dlg')?.querySelector('.g12itemactions');
+  if(!actions||actions.querySelector('[data-x-item-plus]'))return;
+  const seed=itemText(item);if(!seed)return;
+  const button=document.createElement('button');button.type='button';button.className='g12items-plus';button.dataset.xItemPlus=item.id;button.textContent='＋でつかう';
+  const drop=actions.querySelector('[data-item-drop]');actions.insertBefore(button,drop||null);
+};
+
+function buildChoices(view,seed=''){
+  const base=view.life.wordGame(seed);
   const randomized=view.randomizeWordGame(base||{});
-  const pool=uniq([...(randomized.choices||[]),...PUNCT]);
-  const normal=shuffled(pool.filter(x=>!PUNCT.includes(x))).slice(0,32);
-  return [...PUNCT,...normal];
+  const pool=uniq([seed,...(randomized.choices||[]),...PUNCT]);
+  const normal=shuffled(pool.filter(x=>x!==seed&&!PUNCT.includes(x))).slice(0,32);
+  return uniq([...PUNCT,...(seed?[seed]:[]),...normal]);
 }
 
-function showExtended(view){
+function showExtended(view,{seed='',sourceItemId=''}={}){
   currentView=view;
-  view.activity={type:'word-plus',selections:[],choices:buildChoices(view)};
+  const first=String(seed||'').trim();
+  view.activity={type:'word-plus',selections:first?[first]:[],choices:buildChoices(view,first),sourceItemId};
   renderExtended(view);
 }
 
@@ -74,8 +88,8 @@ function renderExtended(view){
   view.openModal(`<div class="g12x-layout"><div class="g12modalhead"><div><b>ことばをくっつける＋</b><small>1〜6こまで。句読点も使える。</small></div><button data-modal-close>×</button></div><div class="g12x-choices">${choices}</div><div class="g12x-footer"><div class="g12x-preview">${phrase?esc(phrase):'<span style="color:#999;font-size:12px">使いたい順に押す。</span>'}</div><div class="g12x-meta"><span>${selected.length}/6</span><button type="button" class="g12x-undo" data-x-undo ${selected.length?'':'disabled'}>ひとつ戻す</button></div><div class="g12x-actions"><button type="button" class="primary" data-x-say ${selected.length?'':'disabled'}>この子に言う</button><button type="button" data-x-save ${selected.length?'':'disabled'}>とっておく</button><button type="button" data-x-send ${selected.length?'':'disabled'}>相手に送る</button><button type="button" data-x-share ${selected.length?'':'disabled'}>画像でシェア</button></div></div></div>`);
 }
 
-async function say(view){const words=[...(view.activity?.selections||[])];if(!words.length)return;view.closeModal();const result=await view.life.sayCraftedPhrase(words);await view.render({preservePet:true});if(result?.stageChanged)view.showStageUp(result.stageChanged);else if(result)view.applyLifeEvent(result)}
-async function save(view){const words=[...(view.activity?.selections||[])];if(!words.length)return;await view.life.saveCraftedPhrase(words);view.closeModal();await view.render({preservePet:true});view.showIdleFx('💬')}
+async function say(view){const words=[...(view.activity?.selections||[])],sourceItemId=view.activity?.sourceItemId||'';if(!words.length)return;view.closeModal();const result=await view.life.sayCraftedPhrase(words,{sourceItemId});await view.render({preservePet:true});if(result?.stageChanged)view.showStageUp(result.stageChanged);else if(result)view.applyLifeEvent(result)}
+async function save(view){const words=[...(view.activity?.selections||[])],sourceItemId=view.activity?.sourceItemId||'';if(!words.length)return;await view.life.saveCraftedPhrase(words,{sourceItemId});view.closeModal();await view.render({preservePet:true});view.showIdleFx('💬')}
 
 function giftUrl(words){const url=new URL(location.href);url.search='';url.hash='';url.searchParams.set('gift',enc64(words));url.searchParams.set('from',viewer());return url.toString()}
 async function send(words){if(!words.length)return;const url=giftUrl(words);if(mobileShare()&&navigator.share){try{await navigator.share({url});return}catch(err){if(err?.name==='AbortError')return}}
@@ -92,6 +106,7 @@ async function shareImage(words){
 installStyle();ensureToast();
 document.addEventListener('click',async event=>{
   const mode=event.target.closest?.('[data-play-mode="words-plus"]');if(mode){event.preventDefault();event.stopImmediatePropagation();if(currentView)showExtended(currentView);return}
+  const itemPlus=event.target.closest?.('[data-x-item-plus]');if(itemPlus){event.preventDefault();event.stopImmediatePropagation();if(!currentView)return;const item=currentView.life.getItem(itemPlus.dataset.xItemPlus||'');if(item)showExtended(currentView,{seed:itemText(item),sourceItemId:item.id});return}
   const choice=event.target.closest?.('[data-x-choice]');if(choice){event.preventDefault();event.stopImmediatePropagation();if(!currentView?.activity||currentView.activity.type!=='word-plus')return;const v=dec(choice.dataset.v||'');if(currentView.activity.selections.length<6&&!currentView.activity.selections.includes(v))currentView.activity.selections.push(v);renderExtended(currentView);return}
   const undo=event.target.closest?.('[data-x-undo]');if(undo){event.preventDefault();event.stopImmediatePropagation();currentView?.activity?.selections?.pop();if(currentView)renderExtended(currentView);return}
   const sayBtn=event.target.closest?.('[data-x-say]');if(sayBtn){event.preventDefault();event.stopImmediatePropagation();if(currentView)await say(currentView);return}
