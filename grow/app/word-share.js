@@ -6,9 +6,12 @@ function installStyle(){
   style.id=STYLE_ID;
   style.textContent=`
     #g12 .g12wordbuttons{grid-template-columns:repeat(2,minmax(0,1fr))}
-    #g12 .g12wordbuttons .g12primary{grid-column:1/-1}
+    #g12 .g12wordbuttons .g12primary{grid-column:auto!important;order:1}
+    #g12 .g12wordbuttons .g12wordsave{order:2}
+    #g12 .g12wordbuttons .g12wordsend{grid-column:auto!important;order:3}
+    #g12 .g12wordbuttons .g12wordshare{order:4}
     #g12 .g12wordshare{box-sizing:border-box;width:100%;padding:12px;border:1px solid #111;border-radius:9px;background:#fff;font-size:13px;font-weight:900}
-    @media(max-width:420px){#g12 .g12wordsave,#g12 .g12wordshare{font-size:12px;padding:11px 8px}}
+    @media(max-width:420px){#g12 .g12primary,#g12 .g12wordsave,#g12 .g12wordsend,#g12 .g12wordshare{font-size:12px;padding:11px 8px}}
   `;
   document.head.append(style);
 }
@@ -22,6 +25,8 @@ function selectedWords(){
 function ensureButton(){
   const box=document.querySelector('#g12 .g12wordbuttons');
   if(!box)return;
+  const primary=box.querySelector('.g12primary');
+  if(primary)primary.textContent='この子に言う';
   let button=box.querySelector('[data-word-share]');
   if(!button){
     button=document.createElement('button');
