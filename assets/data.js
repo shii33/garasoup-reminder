@@ -11,8 +11,43 @@
       if(c?.dictionary)c.dictionary.count=(c.dictionary.entries||[]).length;
     }catch(e){console.warn('latest dictionary patch skipped',e)}
   }
+  async function repairLiveStats(stats,home){
+    try{
+      const state=await fetch(home+'scripts/state.json',{cache:'no-store'}).then(r=>r.ok?r.json():null);
+      if(!state)return stats;
+      const known=[...new Set(state.active_dates||[])],baseEnd=String(state.base_end||''),baseDays=Number(state.base_active_days||0);
+      if(baseDays){
+        stats.period.active_days=baseDays+known.filter(d=>String(d)>baseEnd).length;
+        stats.counts.avg_text_per_day=Math.round(stats.counts.text_messages/Math.max(stats.period.active_days,1)*10)/10;
+      }
+      const days=new Map((LATEST_STATS.top_days||[]).map(x=>[x.date,x.count]));
+      Object.entries(state.day_counts||{}).forEach(([date,count])=>days.set(date,Number(count)));
+      stats.top_days=[...days].map(([date,count])=>({date,count})).sort((a,b)=>b.count-a.count).slice(0,10);
+      if(stats.top_days.length)stats.peak_day=stats.top_days[0];
+      const recentSums=state.stats_aux?.reply_sums||{},recentCounts=state.stats_aux?.reply_counts||{};
+      stats.reply=(LATEST_STATS.reply||[]).map(base=>{
+        const count=Number(base.count||0)+Number(recentCounts[base.direction]||0);
+        const sum=Number(base.avg_seconds||0)*Number(base.count||0)+Number(recentSums[base.direction]||0);
+        const live=(stats.reply||[]).find(x=>x.direction===base.direction)||{};
+        return {...base,...live,count,avg_seconds:count?Math.round(sum/count*10)/10:0,fastest_seconds:Math.min(Number(base.fastest_seconds??Infinity),Number(live.fastest_seconds??Infinity))}
+      });
+    }catch(e){console.warn('latest stats repair skipped',e)}
+    return stats
+  }
   async function core(home='../'){
-    if(!corePromise)corePromise=(async()=>{const c=await WareraAuth.load(home+'data/core.enc',home);await patchDictionaryFromLatestMemory(c,home);c.stats=LATEST_STATS;c.anniversaries=LATEST_ANNIVERSARIES;return c})();
+    if(!corePromise)corePromise=(async()=>{
+      const c=await WareraAuth.load(home+'data/core.enc',home);
+      await patchDictionaryFromLatestMemory(c,home);
+      const liveEnd=String(c?.stats?.period?.end||''),snapshotEnd=String(LATEST_STATS?.period?.end||'');
+      const liveCount=Number(c?.stats?.counts?.raw_records||0),snapshotCount=Number(LATEST_STATS?.counts?.raw_records||0);
+      if(liveEnd<snapshotEnd||(liveEnd===snapshotEnd&&liveCount<snapshotCount)){
+        c.stats=LATEST_STATS;
+        c.anniversaries=LATEST_ANNIVERSARIES;
+      }else if(liveEnd>snapshotEnd||liveCount>snapshotCount){
+        await repairLiveStats(c.stats,home);
+      }
+      return c
+    })();
     return corePromise
   }
   async function memories(home='../'){

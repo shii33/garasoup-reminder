@@ -204,14 +204,20 @@ def update_stats(stats,new,state):
     if rbatch['messages']>stats['rapid_rally'].get('messages',0):stats['rapid_rally']=rbatch
     day_counts=state.setdefault('day_counts',{})
     for d,n in Counter(r['dt'].date().isoformat() for r in texts).items():day_counts[d]=day_counts.get(d,0)+n
-    top=sorted(({'date':d,'count':n} for d,n in day_counts.items()),key=lambda x:x['count'],reverse=True)[:10];stats['top_days']=top
+    top_by_date={x['date']:x['count'] for x in stats.get('top_days',[]) if x.get('date')}
+    top_by_date.update(day_counts)
+    top=sorted(({'date':d,'count':n} for d,n in top_by_date.items()),key=lambda x:x['count'],reverse=True)[:10];stats['top_days']=top
     if top:stats['peak_day']=top[0]
     if texts or calls:
-        end=max(r['dt'].date().isoformat() for r in new);stats['period']['end']=max(stats['period']['end'],end);stats['period']['days']=(datetime.fromisoformat(stats['period']['end'])-datetime.fromisoformat(stats['period']['start'])).days+1;known=set(state.setdefault('active_dates',[]));known.update(r['dt'].date().isoformat() for r in texts);state['active_dates']=sorted(known);stats['period']['active_days']=len(known)
+        end=max(r['dt'].date().isoformat() for r in new);stats['period']['end']=max(stats['period']['end'],end);stats['period']['days']=(datetime.fromisoformat(stats['period']['end'])-datetime.fromisoformat(stats['period']['start'])).days+1;known=set(state.setdefault('active_dates',[]));known.update(r['dt'].date().isoformat() for r in texts);state['active_dates']=sorted(known);base_end=state.get('base_end','');base_days=int(state.get('base_active_days',0));after_base=sum(1 for d in known if not base_end or d>base_end);stats['period']['active_days']=base_days+after_base if base_days else len(known)
     stats['counts']['avg_text_per_day']=round(stats['counts']['text_messages']/max(stats['period'].get('active_days',1),1),1)
     for m in MILESTONES:
         if old_text_count<m<=old_text_count+len(texts) and not any(x.get('count')==m for x in stats['milestones']):stats['milestones'].append({'count':m,'date':texts[m-old_text_count-1]['dt'].date().isoformat()})
-    aux=state.setdefault('stats_aux',{});prev=aux.get('last_text');chain=[]
+    aux=state.setdefault('stats_aux',{})
+    if not aux.get('reply_counts'):
+        aux['reply_counts']={x['direction']:int(x.get('count',0)) for x in stats.get('reply',[]) if x.get('direction')}
+        aux['reply_sums']={x['direction']:float(x.get('avg_seconds',0))*int(x.get('count',0)) for x in stats.get('reply',[]) if x.get('direction')}
+    prev=aux.get('last_text');chain=[]
     if prev:
         try:chain.append({'dt':datetime.fromisoformat(prev['dt']),'sender':prev['sender'],'text':prev.get('text','')})
         except Exception:pass
