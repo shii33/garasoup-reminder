@@ -15,3 +15,9 @@
 思い出の差分をまとめるだけなら `python scripts/compact_memories.py`。
 
 データは `data/core.enc`、`data/memories-base.enc`、`data/memories-updates/`、`data/quiz-scenes.enc`、`data/manifest.json` に集約しています。
+
+更新後のサイト全体チェック：
+
+```sh
+python3 scripts/check_site.py
+```

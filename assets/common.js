@@ -1,7 +1,30 @@
 function wireLock(home='../'){const b=document.querySelector('[data-lock]');if(b)b.addEventListener('click',()=>{WareraAuth.clear();location.href=home;});}
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function fmtDate(s){if(!s)return'';const [y,m,d]=s.split('-');return `${y}.${m}.${d}`;}
 function fmtMinutes(min){min=Math.round(Number(min)||0);const h=Math.floor(min/60),m=min%60;return h?`${h}時間${m?m+'分':''}`:`${m}分`;}
+
+window.WareraUI=(()=>{
+  function readJSON(key,fallback=[]){try{const value=JSON.parse(localStorage.getItem(key)||'null');return value??fallback}catch{return fallback}}
+  function writeJSON(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true}catch{return false}}
+  function chatScene(item){
+    const wrap=document.createElement('div');wrap.className='chat-scene';
+    for(const line of item?.lines||[]){
+      const row=document.createElement('div'),who=document.createElement('span'),bubble=document.createElement('div');
+      row.className='chat-line '+(line.who==='み'?'mine':'theirs');who.className='who';who.textContent=line.who;bubble.className='bubble';bubble.textContent=line.text;
+      line.who==='み'?row.append(bubble,who):row.append(who,bubble);wrap.append(row);
+    }
+    return wrap;
+  }
+  function showError(error){
+    if(error?.message==='locked'||document.querySelector('.app-error'))return;
+    console.error(error);
+    const host=document.querySelector('main')||document.body,box=document.createElement('section');
+    box.className='panel app-error';box.innerHTML='<h2>読み込みに失敗しました</h2><p class="subtle"></p><button class="press-btn">もう一度読み込む</button>';
+    box.querySelector('p').textContent=error?.message||String(error||'不明なエラー');box.querySelector('button').onclick=()=>location.reload();host.append(box);
+  }
+  window.addEventListener('unhandledrejection',event=>showError(event.reason));
+  return{readJSON,writeJSON,chatScene,showError};
+})();
 
 (()=>{
   const KEY='warera_chat_perspective';
