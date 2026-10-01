@@ -35,6 +35,7 @@ FUN_PATTERNS = {
 }
 ANNIVERSARY_TERMS = ['好き','かわいい','ありがと','オフトゥン','ちっち','てぇてぇ','おはよ','おやすみ','風呂','サンキュー']
 MILESTONES = [1000,5000,10000,25000,50000,75000,100000,150000,200000]
+APOLOGY_PATTERN = re.compile(r'ごめん|御免|申し訳|すみませ|すいませ|すま(?:ん|ぬ)|お詫び', re.I)
 
 def parse_records(text):
     out=[];cur=None
@@ -143,6 +144,10 @@ def _max_streak(texts):
         else:curwho=w;n=1;start=r['dt']
         if n>best['messages']:best={'who':w,'messages':n,'date':start.date().isoformat()}
     return best
+def apology_day_counts(records):
+    return Counter(r['dt'].date().isoformat() for r in records if is_text(r) and who(r)=='み' and APOLOGY_PATTERN.search(r['text']))
+def apology_top_rows(counts,limit=3):
+    return [{'date':d,'count':n} for d,n in sorted(counts.items(),key=lambda x:(-x[1],x[0]))[:limit]]
 def build_stats(records):
     texts=[r for r in records if is_text(r)];calls=[r for r in records if is_call(r)]
     start=min(r['dt'] for r in records).date();end=max(r['dt'] for r in records).date();active=sorted({r['dt'].date().isoformat() for r in texts});bys=Counter(who(r) for r in texts);hours=Counter(r['dt'].hour for r in texts);days=Counter(r['dt'].date().isoformat() for r in texts);mt=Counter(r['dt'].strftime('%Y-%m') for r in texts);mc=Counter(r['dt'].strftime('%Y-%m') for r in calls);weekday=Counter(WEEKDAYS[r['dt'].weekday()] for r in texts);buckets=Counter(_time_bucket(r['dt'].hour) for r in texts);total_min=sum(call_minutes(r['text']) for r in calls)
@@ -162,18 +167,19 @@ def build_stats(records):
         hit=next((r for r in texts if re.search(pat,r['text'],re.I)),None)
         if hit:first[label]=hit['dt'].date().isoformat()
     milestones=[{'count':m,'date':texts[m-1]['dt'].date().isoformat()} for m in MILESTONES if len(texts)>=m];top_days=[{'date':d,'count':n} for d,n in days.most_common(10)];peak=top_days[0];hour_rows=[{'hour':h,'count':hours[h]} for h in range(24)];ph=max(hour_rows,key=lambda x:x['count']);fun=[{'label':label,'count':sum(len(re.findall(pat,r['text'],re.I)) for r in texts)} for label,pat in FUN_PATTERNS.items()]
-    stats={'counts':{'raw_records':len(records),'text_messages':len(texts),'calls':len(calls),'call_minutes':round(total_min,1),'call_hours':round(total_min/60,1),'avg_text_per_day':round(len(texts)/max(len(active),1),1),'questions':sum(r['text'].count('?')+r['text'].count('？') for r in texts),'exclamations':sum(r['text'].count('!')+r['text'].count('！') for r in texts),'w_chars':sum(len(re.findall('w',r['text'],re.I)) for r in texts)},'period':{'start':start.isoformat(),'end':end.isoformat(),'days':(end-start).days+1,'active_days':len(active)},'by_sender':[{'who':w,'count':bys[w]} for w in ['み','も']],'hours':hour_rows,'peak_hour':{'hour':ph['hour'],'count':ph['count']},'months':[{'month':m,'count':mt[m],'calls':mc[m]} for m in sorted(set(mt)|set(mc))],'weekday':[{'label':w,'count':weekday[w]} for w in WEEKDAYS],'time_buckets':[{'label':b,'count':buckets[b]} for b in ['深夜 0〜4時','朝 5〜9時','昼 10〜16時','夜 17〜23時']],'fun':fun,'top_days':top_days,'peak_day':peak,'longest_call':longest_call,'rapid_rally':_rapid_rally(texts),'longest_message':{'who':who(longest),'date':longest['dt'].date().isoformat(),'chars':len(longest['text'])},'max_streak':_max_streak(texts),'reply':[{'direction':k,'avg_seconds':round(reply_sums[k]/reply_counts[k],1),'count':reply_counts[k],'fastest_seconds':reply_fast[k]['seconds'],'fastest_date':reply_fast[k]['date']} for k in sorted(reply_counts)],'longest_gap':{'hours':round(lg[0]/3600,1),'from':lg[1]['dt'].date().isoformat(),'to':lg[2]['dt'].date().isoformat()},'first_occurrences':first,'milestones':milestones,'note':'ログから自動集計。画像・スタンプ等のシステム行はテキスト発言数から除外。'}
+    apologies=apology_day_counts(texts)
+    stats={'counts':{'raw_records':len(records),'text_messages':len(texts),'calls':len(calls),'call_minutes':round(total_min,1),'call_hours':round(total_min/60,1),'avg_text_per_day':round(len(texts)/max(len(active),1),1),'questions':sum(r['text'].count('?')+r['text'].count('？') for r in texts),'exclamations':sum(r['text'].count('!')+r['text'].count('！') for r in texts),'w_chars':sum(len(re.findall('w',r['text'],re.I)) for r in texts)},'period':{'start':start.isoformat(),'end':end.isoformat(),'days':(end-start).days+1,'active_days':len(active)},'by_sender':[{'who':w,'count':bys[w]} for w in ['み','も']],'hours':hour_rows,'peak_hour':{'hour':ph['hour'],'count':ph['count']},'months':[{'month':m,'count':mt[m],'calls':mc[m]} for m in sorted(set(mt)|set(mc))],'weekday':[{'label':w,'count':weekday[w]} for w in WEEKDAYS],'time_buckets':[{'label':b,'count':buckets[b]} for b in ['深夜 0〜4時','朝 5〜9時','昼 10〜16時','夜 17〜23時']],'fun':fun,'top_days':top_days,'apology_days':apology_top_rows(apologies),'apology_days_basis':'full','peak_day':peak,'longest_call':longest_call,'rapid_rally':_rapid_rally(texts),'longest_message':{'who':who(longest),'date':longest['dt'].date().isoformat(),'chars':len(longest['text'])},'max_streak':_max_streak(texts),'reply':[{'direction':k,'avg_seconds':round(reply_sums[k]/reply_counts[k],1),'count':reply_counts[k],'fastest_seconds':reply_fast[k]['seconds'],'fastest_date':reply_fast[k]['date']} for k in sorted(reply_counts)],'longest_gap':{'hours':round(lg[0]/3600,1),'from':lg[1]['dt'].date().isoformat(),'to':lg[2]['dt'].date().isoformat()},'first_occurrences':first,'milestones':milestones,'note':'ログから自動集計。画像・スタンプ等のシステム行はテキスト発言数から除外。'}
     c=1
     for r in reversed(texts[:-1]):
         if who(r)==who(texts[-1]):c+=1
         else:break
-    aux={'reply_sums':dict(reply_sums),'reply_counts':dict(reply_counts),'last_text':{'dt':texts[-1]['dt'].isoformat(),'sender':texts[-1]['sender'],'text':texts[-1]['text']},'streak_who':who(texts[-1]),'streak_count':c,'streak_start':texts[-c]['dt'].date().isoformat()}
+    aux={'reply_sums':dict(reply_sums),'reply_counts':dict(reply_counts),'apology_day_counts':dict(apologies),'last_text':{'dt':texts[-1]['dt'].isoformat(),'sender':texts[-1]['sender'],'text':texts[-1]['text']},'streak_who':who(texts[-1]),'streak_count':c,'streak_start':texts[-c]['dt'].date().isoformat()}
     return stats,aux
 def ensure_stats_shape(stats):
     stats.setdefault('fun',[]);existing={x.get('label') for x in stats['fun']}
     for label in FUN_PATTERNS:
         if label not in existing:stats['fun'].append({'label':label,'count':0})
-    stats.setdefault('weekday',[{'label':w,'count':0} for w in WEEKDAYS]);stats.setdefault('time_buckets',[{'label':b,'count':0} for b in ['深夜 0〜4時','朝 5〜9時','昼 10〜16時','夜 17〜23時']]);stats.setdefault('first_occurrences',{});stats.setdefault('milestones',[]);stats.setdefault('reply',[]);stats.setdefault('longest_gap',{'hours':0,'from':'','to':''});stats.setdefault('max_streak',{'who':'','messages':0,'date':''});stats.setdefault('longest_message',{'who':'','date':'','chars':0});stats.setdefault('top_days',[])
+    stats.setdefault('weekday',[{'label':w,'count':0} for w in WEEKDAYS]);stats.setdefault('time_buckets',[{'label':b,'count':0} for b in ['深夜 0〜4時','朝 5〜9時','昼 10〜16時','夜 17〜23時']]);stats.setdefault('first_occurrences',{});stats.setdefault('milestones',[]);stats.setdefault('reply',[]);stats.setdefault('longest_gap',{'hours':0,'from':'','to':''});stats.setdefault('max_streak',{'who':'','messages':0,'date':''});stats.setdefault('longest_message',{'who':'','date':'','chars':0});stats.setdefault('top_days',[]);stats.setdefault('apology_days',[]);stats.setdefault('apology_days_basis','incremental')
     for k in ['questions','exclamations','w_chars']:stats['counts'].setdefault(k,0)
     return stats
 def update_stats(stats,new,state):
@@ -214,6 +220,7 @@ def update_stats(stats,new,state):
     for m in MILESTONES:
         if old_text_count<m<=old_text_count+len(texts) and not any(x.get('count')==m for x in stats['milestones']):stats['milestones'].append({'count':m,'date':texts[m-old_text_count-1]['dt'].date().isoformat()})
     aux=state.setdefault('stats_aux',{})
+    apology_counts=Counter(aux.get('apology_day_counts',{}));apology_counts.update(apology_day_counts(texts));aux['apology_day_counts']=dict(apology_counts);stats['apology_days']=apology_top_rows(apology_counts)
     if not aux.get('reply_counts'):
         aux['reply_counts']={x['direction']:int(x.get('count',0)) for x in stats.get('reply',[]) if x.get('direction')}
         aux['reply_sums']={x['direction']:float(x.get('avg_seconds',0))*int(x.get('count',0)) for x in stats.get('reply',[]) if x.get('direction')}
@@ -367,7 +374,8 @@ def build_anniversaries(stats):
     return out
 def build_state(records,stats,aux):
     texts=[r for r in records if is_text(r)];days=Counter(r['dt'].date().isoformat() for r in texts);last=max(r['dt'] for r in records)
-    return {'last_processed':last.isoformat(),'base_end':last.date().isoformat(),'base_active_days':len(days),'active_dates':sorted(days),'day_counts':dict(days),'processed_record_ids':[rid(r) for r in records[-5000:]],'stats_aux':aux}
+    recent_ids=list(dict.fromkeys(rid(r) for r in records[-5000:]))
+    return {'last_processed':last.isoformat(),'base_end':last.date().isoformat(),'base_active_days':len(days),'active_dates':sorted(days),'day_counts':dict(days),'processed_record_ids':recent_ids,'stats_aux':aux}
 def rebuild_all(root,data,state_path,password,records):
     core=load_core(data,password);stats,aux=build_stats(records);core['stats']=stats;core['dictionary']=rebuild_dictionary(core.get('dictionary',{'entries':[]}),records);core['quiz']=build_quiz(records,1000,1000);core['anniversaries']=build_anniversaries(stats);memories=build_memories(records,1,30);save_json(data/'memories-base.enc',encrypt_obj({'version':2,'count':len(memories),'memories':memories},password));save_json(data/'manifest.json',{'version':2,'base':'memories-base.enc','base_count':len(memories),'updates':[]});qp=build_quiz_scenes(core['quiz'],records);save_json(data/'quiz-scenes.enc',encrypt_obj(qp,password));save_core(data,core,password);state=build_state(records,stats,aux);state_path.write_text(json.dumps(state,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');print(f'全量再構築完了: memories {len(memories):,}件 / quiz 発言者 {len(core["quiz"]["who"]):,}問・続き {len(core["quiz"]["next"]):,}問 / quiz scenes {qp["count"]:,}件')
 def incremental(root,data,state_path,password,records):

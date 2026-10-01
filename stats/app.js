@@ -36,6 +36,9 @@ const relationDiff=Math.abs(cr.during_rate-cr.around_rate);
 document.getElementById('callRelationNote').textContent=`通話ログの記録時刻を開始時刻として、表示された通話時間ぶんを通話区間とみなして集計。前後比較は各通話区間の直前・直後1時間（通話区間を除く）。現時点では通話中 ${cr.during_rate}通/時、前後 ${cr.around_rate}通/時で、全体では${relationDiff<2?'ほぼ同じ':'差が出ている'}。${cr===callFallback?' この比較だけは '+cr.through+' までの全ログ集計。':''}`;
 
 document.getElementById('topDays').innerHTML=(a.top_days||[]).slice(0,10).map((x,i)=>`<div class="rank-row"><span>${i+1}. ${fmtDate(x.date)}</span><b>${x.count.toLocaleString()}通</b></div>`).join('');
+const apologyDays=a.apology_days||d.apology_days||[];
+document.getElementById('apologyDays').innerHTML=apologyDays.slice(0,3).map((x,i)=>`<div class="rank-row"><span>${i+1}. ${fmtDate(x.date)}</span><b>${x.count.toLocaleString()}回</b></div>`).join('')||'<div class="empty">まだ謝ってない。えらい。</div>';
+document.getElementById('apologyNote').textContent=(a.apology_days_basis||d.apology_days_basis)==='full'?'みの発言のうち、謝罪表現を含むメッセージを1回として集計。':'現在保持している会話と今後の追加ログを集計。全量ログで再構築すると過去分も厳密になる。';
 
 const recordBook=[
 {date:'2026-05-23',kind:'記録更新',title:'通話 12分',detail:'確認できる最初の最長通話記録'},
