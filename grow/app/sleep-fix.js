@@ -1,4 +1,4 @@
-import {GrowModel} from './core.js?v=20260927-refactor-18';
+import {GrowModel} from './core.js?v=20261004-offline-outing-1';
 
 // 寝かせたあとも、21:00〜翌7:00は「今だけ遊ぼ」を使えるようにする。
 GrowModel.prototype.canNightPlay=function(){

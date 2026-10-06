@@ -1,4 +1,4 @@
-import {CreatureLife} from './life.js?v=20260927-refactor-18';
+import {CreatureLife} from './life.js?v=20261004-offline-outing-1';
 import {GrowView} from './view.js?v=20260927-refactor-18';
 import {memories,expandedQuiz} from './data-service.js?v=20260927-refactor-18';
 

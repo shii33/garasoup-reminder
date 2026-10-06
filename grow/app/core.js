@@ -134,6 +134,7 @@ export class GrowModel{
     this.state=null;
     this.corpus=null;
     this.currentSpeechEntry=null;
+    this.lastVisitGapMs=0;
   }
 
   key(){return `${KEY_PREFIX}${this.viewer}_${this.target}`}
@@ -247,9 +248,11 @@ export class GrowModel{
 
   updateReturnTrait(){
     const state=this.state;
-    const gap=Math.max(0,(now()-Number(state.lastVisitAt||now()))/36e5);
+    const current=now(),previous=Number(state.lastVisitAt||current);
+    this.lastVisitGapMs=Math.max(0,current-previous);
+    const gap=this.lastVisitGapMs/36e5;
     if(gap>=3)state.traits.independent+=Math.min(2.4,gap/8);
-    state.lastVisitAt=now();
+    state.lastVisitAt=current;
   }
 
   async loadCorpus(){

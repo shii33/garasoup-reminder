@@ -1,4 +1,4 @@
-import {cleanText,now,today} from './core.js?v=20260927-refactor-18';
+import {cleanText,now,today} from './core.js?v=20261004-offline-outing-1';
 
 const LIMITS={
   inventory:18,
@@ -7,6 +7,8 @@ const LIMITS={
   statusFreshMs:180000,
   outingIdleMs:120000,
   outingCooldownMs:3600000,
+  offlineOutingMinMs:6*3600000,
+  offlineOutingCooldownMs:18*3600000,
 };
 
 const uniq=a=>[...new Set((a||[]).map(x=>String(x||'').trim()).filter(Boolean))];
@@ -75,10 +77,12 @@ export class CreatureLife{
   async initialize(){
     this.ensure();
     let changed=this.maybeDailyFind();
+    const offline=await this.maybeOfflineOuting();
+    if(offline)changed=true;
     const returned=await this.tick(false);
     if(returned)changed=true;
-    if(changed)await this.model.save();
-    return returned;
+    await this.model.save();
+    return returned||offline;
   }
 
   rotateMood(){
@@ -192,6 +196,24 @@ export class CreatureLife{
   }
 
   shouldStartOuting(){const stage=this.model.stageKey(),life=this.life();if(!['baby','child','adult'].includes(stage)||life.outing.active||this.model.isAsleep())return false;if(now()-life.lastInteractionAt<LIMITS.outingIdleMs)return false;if(now()-life.lastOutingAt<LIMITS.outingCooldownMs)return false;let chance=(stage==='baby'?.012:.015)*(1+this.maturity()*.08);if(life.mood==='curious')chance*=1.8;if(this.model.state.personality==='aloof')chance*=1.35;if(this.model.state.personality==='playful')chance*=1.2;return Math.random()<chance}
+  async maybeOfflineOuting(){
+    const life=this.life(),stage=this.model.stageKey(),awayMs=Number(this.model.lastVisitGapMs||0);
+    if(!['baby','child','adult'].includes(stage)||life.outing.active||this.model.isAsleep())return null;
+    if(awayMs<LIMITS.offlineOutingMinMs||now()-life.lastOutingAt<LIMITS.offlineOutingCooldownMs)return null;
+    let chance=Math.min(.55,.16+Math.max(0,awayMs-LIMITS.offlineOutingMinMs)/(48*3600000)*.39);
+    if(life.mood==='curious')chance*=1.15;
+    if(this.model.state.personality==='aloof')chance*=1.1;
+    if(Math.random()>=Math.min(.6,chance))return null;
+    if(Math.random()<.2){
+      const remaining=(6+Math.random()*16)*60000;
+      life.outing={active:true,startedAt:now()-Math.min(awayMs,20*60000),returnAt:now()+remaining};
+      life.lastEvent={at:now(),status:'🚪 留守のあいだに出かけたらしい',kind:'offline-outing',pose:''};
+      return{outing:true,startedOffline:true};
+    }
+    const result=await this.finishOuting(false);
+    this.setEvent('🎁 留守のあいだにどっか行ってた','offline-return',result.pose);
+    return{...result,offline:true};
+  }
   async startOuting(){const life=this.life(),stage=this.model.stageKey(),minutes=stage==='baby'?5+Math.random()*10:12+Math.random()*28;life.outing={active:true,startedAt:now(),returnAt:now()+minutes*60000};life.lastEvent={at:now(),status:'🚪 おでかけ中',kind:'outing',pose:''};await this.model.save()}
   async tick(save=true){const life=this.life();this.rotateMood();this.maybeDailyFind();if(life.outing.active&&life.outing.returnAt&&now()>=life.outing.returnAt)return this.finishOuting(save);return null}
   async recallOuting(){if(!this.isOuting())return null;return this.finishOuting(true)}

@@ -1,4 +1,4 @@
-import {NAMES,petUrl,cleanText} from './core.js?v=20260927-refactor-18';
+import {NAMES,petUrl,cleanText} from './core.js?v=20261004-offline-outing-1';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const enc=s=>encodeURIComponent(String(s??''));
