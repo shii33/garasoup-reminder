@@ -36,6 +36,8 @@ FUN_PATTERNS = {
 ANNIVERSARY_TERMS = ['好き','かわいい','ありがと','オフトゥン','ちっち','てぇてぇ','おはよ','おやすみ','風呂','サンキュー']
 MILESTONES = [1000,5000,10000,25000,50000,75000,100000,150000,200000]
 APOLOGY_PATTERN = re.compile(r'ごめん|御免|申し訳|すみませ|すいませ|すま(?:ん|ぬ)|お詫び', re.I)
+DICTIONARY_EXAMPLE_MAX_CHARS = 60
+DICTIONARY_EXAMPLE_MAX_LINES = 2
 
 def parse_records(text):
     out=[];cur=None
@@ -76,6 +78,9 @@ def call_minutes(t):
     h=re.search(r'(\d+)時間',t);m=re.search(r'(\d+)分',t)
     return (int(h.group(1))*60 if h else 0)+(int(m.group(1)) if m else 0)
 def who(r): return WHO.get(r['sender'],r['sender'])
+def is_dictionary_example(r):
+    text=r['text'].strip()
+    return bool(text) and len(text)<=DICTIONARY_EXAMPLE_MAX_CHARS and text.count('\n')<DICTIONARY_EXAMPLE_MAX_LINES
 def clean_for_scene(r):
     if not is_text(r):return False
     t=r['text'].strip()
@@ -248,7 +253,7 @@ def update_stats(stats,new,state):
 def rebuild_dictionary(dic,records):
     texts=[r for r in records if is_text(r)]
     for e in dic.get('entries',[]):
-        terms=[e['term']]+e.get('aliases',[]);hits=[r for r in texts if any(t and t in r['text'] for t in terms)];e['count']=len(hits);e['first_date']=hits[0]['dt'].date().isoformat() if hits else e.get('first_date');e['examples']=[{'who':who(r),'date':r['dt'].date().isoformat(),'text':r['text']} for r in hits[:3]]
+        terms=[e['term']]+e.get('aliases',[]);hits=[r for r in texts if any(t and t in r['text'] for t in terms)];examples=[r for r in hits if is_dictionary_example(r)];e['count']=len(hits);e['first_date']=hits[0]['dt'].date().isoformat() if hits else e.get('first_date');e['examples']=[{'who':who(r),'date':r['dt'].date().isoformat(),'text':r['text']} for r in examples[:3]]
     dic['count']=len(dic.get('entries',[]));return dic
 def update_dictionary(dic,new):
     texts=[r for r in new if is_text(r)]
@@ -256,7 +261,7 @@ def update_dictionary(dic,new):
         terms=[e['term']]+e.get('aliases',[]);hits=[r for r in texts if any(t and t in r['text'] for t in terms)];e['count']=e.get('count',0)+len(hits)
         if hits and not e.get('first_date'):e['first_date']=hits[0]['dt'].date().isoformat()
         ex=e.setdefault('examples',[])
-        for r in hits:
+        for r in (r for r in hits if is_dictionary_example(r)):
             row={'who':who(r),'date':r['dt'].date().isoformat(),'text':r['text']}
             if row not in ex and len(ex)<3:ex.append(row)
     dic['count']=len(dic.get('entries',[]));return dic

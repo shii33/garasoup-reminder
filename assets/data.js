@@ -7,7 +7,7 @@
     try{
       const pack=await WareraAuth.load(home+'data/memories-updates/20260926-001.enc',home),rows=[],seen=new Set();
       for(const s of pack?.memories||[])for(const l of s.lines||[]){const text=String(l?.text||'').trim();if(!text)continue;const key=`${s.date||''}|${l.who||''}|${text}`;if(seen.has(key))continue;seen.add(key);rows.push({date:s.date||'',who:l.who||'',text})}
-      for(const e of c?.dictionary?.entries||[]){const terms=[e.term,...(e.aliases||[])].filter(Boolean),hits=rows.filter(r=>terms.some(t=>r.text.includes(t)));if(!hits.length)continue;e.count=Number(e.count||0)+hits.length;const ex=e.examples||(e.examples=[]);for(const r of hits){const row={who:r.who,date:r.date,text:r.text};if(ex.length>=3)break;if(!ex.some(x=>x.who===row.who&&x.date===row.date&&x.text===row.text))ex.push(row)}}
+      for(const e of c?.dictionary?.entries||[]){const terms=[e.term,...(e.aliases||[])].filter(Boolean),hits=rows.filter(r=>terms.some(t=>r.text.includes(t)));if(!hits.length)continue;e.count=Number(e.count||0)+hits.length;const ex=e.examples||(e.examples=[]);for(const r of hits){const text=String(r.text||'').trim();if(text.length>60||text.split('\n').length>2)continue;const row={who:r.who,date:r.date,text:r.text};if(ex.length>=3)break;if(!ex.some(x=>x.who===row.who&&x.date===row.date&&x.text===row.text))ex.push(row)}}
       if(c?.dictionary)c.dictionary.count=(c.dictionary.entries||[]).length;
     }catch(e){console.warn('latest dictionary patch skipped',e)}
   }
